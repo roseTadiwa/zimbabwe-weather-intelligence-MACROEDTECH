@@ -1,0 +1,44 @@
+# Python virtual environments
+venv/
+lstm_venv/
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# VS Code
+.vscode/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Streamlit
+.streamlit/
+
+# Temporary files
+*.tmp
+*.log
+
+# Local environment variables
+.env
+
+# Large/raw data files
+data/raw/
+
+# TensorFlow temporary/checkpoint files
+*.h5
+*.ckpt
+checkpoint
+
+
+# Large processed datasets
+data/processed/model_data/
+data/processed/lstm_data/
+data/processed/lstm_data_v2/
+data/processed/zimbabwe_weather_features.csv
+data/processed/zimbabwe_weather_model.csv

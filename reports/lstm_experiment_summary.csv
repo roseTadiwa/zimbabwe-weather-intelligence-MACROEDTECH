@@ -1,0 +1,3 @@
+Experiment,Features,Test_MAE_C,Test_RMSE_C,Test_R2,MAE_Improvement_C,RMSE_Improvement_C,R2_Improvement,MAE_Improvement_Percent,RMSE_Improvement_Percent
+Baseline LSTM,15,0.8016,1.0334,0.9536,0.0,0.0,0.0,0.0,0.0
+LSTM v2,16,0.7771,1.0002,0.9565,0.0245,0.0331,0.0029,3.058,3.2041

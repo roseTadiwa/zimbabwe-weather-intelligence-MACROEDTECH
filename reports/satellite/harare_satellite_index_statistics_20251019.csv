@@ -1,0 +1,18 @@
+Metric,Value
+NDVI minimum,-0.11568829417228699
+NDVI maximum,0.6594516634941101
+NDVI mean,0.12824654579162598
+NDVI median,0.12160050123929977
+NBR minimum,-0.3684210479259491
+NBR maximum,0.5586663484573364
+NBR mean,-0.030589144676923752
+NBR median,-0.02118644118309021
+NDVI > 0.30 pixels,3926.0
+NDVI > 0.30 percentage,0.3926
+NDVI > 0.30 area (km²),0.3926
+NBR < 0 pixels,596698.0
+NBR < 0 percentage,59.669799999999995
+NBR < 0 area (km²),59.6698
+Potential candidate pixels,593960.0
+Potential candidate percentage,59.396
+Potential candidate area (km²),59.396

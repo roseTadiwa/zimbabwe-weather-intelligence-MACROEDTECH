@@ -1,0 +1,5 @@
+class_id,description,pixels,percentage,area_km2
+1,High positive change (dNBR >= 0.20),1540,0.154,0.154
+2,Moderate positive change (0.10 <= dNBR < 0.20),12102,1.2102,1.2102
+3,Little or no change (-0.10 <= dNBR < 0.10),986143,98.6143,98.6143
+4,Negative change (dNBR < -0.10),215,0.0215,0.0215

@@ -1,6 +1,10 @@
 # Python virtual environments
+# Python virtual environments
+
 venv/
 lstm_venv/
+api_venv/
+
 
 # Python cache files
 __pycache__/

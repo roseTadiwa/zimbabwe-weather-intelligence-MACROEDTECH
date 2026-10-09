@@ -20,6 +20,7 @@ st.set_page_config(
 # =========================================================
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+APP_DIR = Path(__file__).resolve().parent
 
 DATA_FILE = (
     BASE_DIR
@@ -27,6 +28,8 @@ DATA_FILE = (
     / "processed"
     / "zimbabwe_weather_2015_2025.csv"
 )
+
+FLAG_FILE = APP_DIR / "zimbabwe_flag.png"
 
 # Use the deployed API URL when configured.
 # Otherwise, use the local API during development.
@@ -87,24 +90,35 @@ except requests.RequestException:
     st.stop()
 
 # =========================================================
-# TITLE
+# TITLE WITH ZIMBABWE FLAG
 # =========================================================
 
-st.title("🌦️ Zimbabwe Weather Intelligence")
+
+# =========================================================
+# TITLE WITH FLAG ON THE SAME ROW
+# =========================================================
+
+import base64
+
+if FLAG_FILE.exists():
+    flag_base64 = base64.b64encode(FLAG_FILE.read_bytes()).decode("utf-8")
+
+    st.markdown(
+        f"""
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
+            <img src="data:image/png;base64,{flag_base64}"
+                 style="width: 65px; height: auto; object-fit: contain;">
+            <h1 style="margin: 0; padding: 0; font-size: 2.5rem;">
+                Zimbabwe Weather Intelligence 🌦️
+            </h1>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+else:
+    st.title("Zimbabwe Weather Intelligence 🌦️")
 
 st.subheader("1-Hour-Ahead Temperature Prediction")
-
-st.write(
-    "An XGBoost-based weather prediction application using "
-    "historical hourly weather observations from four Zimbabwean cities. "
-    "Streamlit provides the interface, while FastAPI serves predictions."
-)
-
-st.caption(
-    "This application uses historical weather data and a prediction API. "
-    "It is not a live weather forecast."
-)
-
 # =========================================================
 # CITY SELECTION
 # =========================================================

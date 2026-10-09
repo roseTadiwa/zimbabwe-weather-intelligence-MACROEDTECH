@@ -1,4 +1,5 @@
 
+import os
 import streamlit as st
 import pandas as pd
 import requests
@@ -27,7 +28,12 @@ DATA_FILE = (
     / "zimbabwe_weather_2015_2025.csv"
 )
 
-API_BASE_URL = "http://127.0.0.1:8000"
+# Use the deployed API URL when configured.
+# Otherwise, use the local API during development.
+API_BASE_URL = os.getenv(
+    "API_BASE_URL",
+    "http://127.0.0.1:8000"
+).rstrip("/")
 
 CITIES = ["Harare", "Bulawayo", "Mutare", "Gweru"]
 
@@ -75,8 +81,8 @@ except requests.RequestException:
     st.sidebar.error("Prediction API unavailable")
     st.error(
         "Cannot connect to the FastAPI backend. "
-        "Please ensure the API is running in the other terminal "
-        "at http://127.0.0.1:8000."
+        "Please ensure the API is running and API_BASE_URL "
+        "points to the correct address."
     )
     st.stop()
 
@@ -95,8 +101,8 @@ st.write(
 )
 
 st.caption(
-    "This application currently uses historical weather data and a "
-    "locally running prediction API. It is not a live weather forecast."
+    "This application uses historical weather data and a prediction API. "
+    "It is not a live weather forecast."
 )
 
 # =========================================================
@@ -293,7 +299,7 @@ if st.button(
         except requests.ConnectionError:
             st.error(
                 "The FastAPI backend could not be reached. "
-                "Check that it is still running on port 8000."
+                "Check that it is running and API_BASE_URL is correct."
             )
             st.stop()
 

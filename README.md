@@ -6,20 +6,20 @@ An end-to-end AI-based weather intelligence project that predicts temperature on
 
 This project develops a weather prediction pipeline using historical hourly weather data covering 1 January 2015 to 31 December 2025.
 
-The project includes data acquisition, preprocessing, exploratory analysis, feature engineering, machine learning, deep learning experiments, model evaluation, feature importance analysis, a prediction API, and an interactive web application.
+The project includes data acquisition, preprocessing, exploratory data analysis, feature engineering, machine learning, deep learning experiments, model evaluation, feature importance analysis, a prediction API, automated API testing, and an interactive web application.
 
-**Geographical scope:** Zimbabwe. This implementation is localized to Zimbabwean weather data and should not be confused with a model trained on Indian Southwest Monsoon data.
+**Geographical scope:** Zimbabwe. This implementation uses Zimbabwean weather data and should not be confused with a model trained on Indian Southwest Monsoon data.
 
 ## 2. Live Application
 
-The project is deployed online using Render and Streamlit Community Cloud.
+The project is deployed using Render and Streamlit Community Cloud.
 
-* **Live Dashboard:** [Open Zimbabwe Weather Intelligence](https://zimbabwe-weather-intelligence-macroedtech.streamlit.app/)
-* **API Service:** [Open the FastAPI backend](https://zimbabwe-weather-intelligence-macroedtech.onrender.com/)
-* **API Health Check:** [Check API status](https://zimbabwe-weather-intelligence-macroedtech.onrender.com/health)
-* **Interactive API Documentation:** [Explore the API](https://zimbabwe-weather-intelligence-macroedtech.onrender.com/docs)
+* **Live Dashboard:** https://zimbabwe-weather-intelligence-macroedtech-nv4fr3n3byeb8vtgxfza.streamlit.app/
+* **API Service:** https://zimbabwe-weather-intelligence-macroedtech.onrender.com/
+* **API Health Check:** https://zimbabwe-weather-intelligence-macroedtech.onrender.com/health
+* **Interactive API Documentation:** https://zimbabwe-weather-intelligence-macroedtech.onrender.com/docs
 
-The dashboard communicates with the FastAPI backend, which loads the trained XGBoost model and generates one-hour-ahead temperature predictions.
+The Streamlit dashboard communicates with the FastAPI backend. The backend loads the trained XGBoost model and generates one-hour-ahead temperature predictions.
 
 The application has been tested with all four supported cities: Harare, Bulawayo, Mutare, and Gweru.
 
@@ -27,14 +27,14 @@ The application has been tested with all four supported cities: Harare, Bulawayo
 
 ## 3. Study Area and Data
 
-The study covers four cities:
+The study covers four cities in Zimbabwe:
 
 * Harare
 * Bulawayo
 * Mutare
 * Gweru
 
-The historical dataset contains hourly observations covering 2015–2025, with 385,728 records across the four cities.
+The historical dataset contains 385,728 hourly records across the four cities, covering 2015–2025.
 
 Weather variables include:
 
@@ -52,7 +52,7 @@ The dataset was checked for missing values and duplicate records during preproce
 
 ## 4. Machine Learning Models
 
-The following approaches were evaluated:
+Six modelling approaches were evaluated:
 
 1. Persistence baseline
 2. Linear Regression
@@ -61,9 +61,15 @@ The following approaches were evaluated:
 5. Baseline Long Short-Term Memory (LSTM)
 6. Improved LSTM v2
 
-The final XGBoost model was trained using historical weather observations and engineered features.
+The final deployed model is XGBoost. It was selected based on its performance on the evaluated test dataset.
 
-The time-based evaluation strategy used data through 2022 for training, 2023–2024 for validation, and 2025 for testing.
+A time-based evaluation strategy was used:
+
+* **Training:** Data through 2022
+* **Validation:** 2023–2024
+* **Testing:** 2025
+
+This approach separates the final test period from the earlier training and validation periods.
 
 ## 5. Model Evaluation
 
@@ -78,59 +84,65 @@ The following results were obtained on the 2025 test dataset.
 | Baseline LSTM     |        0.8016 |         1.0334 |  0.9536 |
 | Improved LSTM v2  |        0.7771 |         1.0002 |  0.9565 |
 
-XGBoost achieved the strongest reported test performance, with:
+XGBoost achieved the strongest reported test performance among the evaluated models:
 
 * **Mean Absolute Error (MAE):** 0.3448°C
 * **Root Mean Squared Error (RMSE):** 0.5210°C
 * **Coefficient of Determination (R²):** 0.9882
 
-MAE measures the average absolute difference between predictions and observed temperatures. RMSE gives greater weight to larger prediction errors, while R² describes how much of the variation in the test outcomes is explained by the model.
+MAE measures the average absolute difference between predicted and observed temperatures. RMSE gives greater weight to larger errors. R² measures how much of the variation in the test outcomes is explained by the model.
 
-These results describe performance on the evaluated 2025 test data. They do not guarantee equivalent accuracy for future forecasts, extreme weather conditions, or other locations.
+These metrics describe performance on the evaluated 2025 test data. They do not guarantee equivalent accuracy in future periods, extreme weather conditions, or other locations.
 
 ## 6. Model Explainability
 
 Feature importance analysis identified current temperature as the most influential XGBoost feature, followed by the 24-hour temperature lag and time-of-day features.
 
-This indicates that recent temperature conditions and temporal patterns contribute substantially to the model's predictions.
+This suggests that recent temperature conditions and temporal patterns contribute substantially to the model's predictions.
 
-Feature importance describes how the trained model uses its inputs; it does not establish causal relationships.
+Feature importance describes how the trained model uses its inputs. It does not establish causal relationships.
 
 ## 7. Application Architecture
 
 The application consists of four main components.
 
-1. **Streamlit frontend:** Provides the user interface for selecting a city, date, time, and weather inputs.
+1. **Streamlit frontend:** Provides the interface for selecting a city, prediction date and time, and weather input values.
 2. **FastAPI backend:** Validates prediction requests, prepares model inputs, and exposes API endpoints.
 3. **XGBoost model:** Generates one-hour-ahead temperature predictions.
-4. **Historical weather dataset:** Provides the observations used for model development and historical-data-based inputs.
+4. **Historical weather dataset:** Provides the observations used during model development.
 
 ### Prediction request flow
 
 `User → Streamlit → FastAPI → XGBoost → FastAPI → Streamlit`
 
-The frontend and backend are deployed separately. The Streamlit application communicates with the API through the `API_BASE_URL` environment variable, which is configured in Streamlit Community Cloud secrets.
+The frontend and backend are deployed separately. The Streamlit application communicates with the API through the `API_BASE_URL` environment variable, configured in Streamlit Community Cloud secrets.
 
 The deployed API provides the following endpoints:
 
 | Endpoint   | Purpose                                |
 | ---------- | -------------------------------------- |
 | `/`        | Returns basic API information          |
-| `/health`  | Reports the API and model status       |
+| `/health`  | Reports API and model status           |
 | `/cities`  | Provides the supported city options    |
 | `/predict` | Accepts prediction requests            |
 | `/docs`    | Provides interactive API documentation |
 
-The application supports historical-data-based predictions and what-if analysis. It is not a live weather service and does not automatically obtain current weather observations.
+### Prediction behaviour
+
+The application predicts temperature one hour ahead using the supplied weather input values and the trained XGBoost model.
+
+Users can explore different input conditions through what-if analysis. The application does not independently retrieve current weather observations and should not be interpreted as an official forecast service or weather-warning system.
+
+Prediction quality depends on the relevance and quality of the input values and on how well the evaluated historical data represents the conditions being modelled.
 
 ## 8. Running the Application Locally
 
 ### Prerequisites
 
 * Python 3.12 for the API environment
-* Python installed for the Streamlit environment
+* Python compatible with the dashboard dependencies
 * Git, if cloning the repository
-* The historical dataset and trained XGBoost model
+* The historical dataset and trained XGBoost model files
 
 ### Step 1: Clone the repository
 
@@ -143,19 +155,32 @@ cd zimbabwe-weather-intelligence-MACROEDTECH
 
 ### Step 2: Set up the API environment
 
-On Windows Command Prompt:
+On Windows Command Prompt, run:
 
-```cmd
+```bat
 py -3.12 -m venv api_venv
 api_venv\Scripts\activate
 python -m pip install -r api_requirements.txt
 ```
 
-### Step 3: Start the FastAPI backend
+### Step 3: Verify the required files
 
-From the project root, with `api_venv` activated:
+Before starting the application, confirm that the following files are present:
 
-```cmd
+```text
+data/processed/zimbabwe_weather_2015_2025.csv
+models/xgboost_weather_model.json
+```
+
+The API and dashboard must be able to access files at the paths expected by the application.
+
+If either required file is absent from a fresh clone, obtain it from the project's authorised data or model storage before running the application.
+
+### Step 4: Start the FastAPI backend
+
+From the project root, with `api_venv` activated, run:
+
+```bash
 uvicorn app.api:app --reload
 ```
 
@@ -168,23 +193,25 @@ The API will be available at:
 
 Keep this terminal running.
 
-### Step 4: Set up the Streamlit environment
+### Step 5: Set up the Streamlit environment
 
 Open a second terminal in the project root.
 
-Activate the existing Streamlit virtual environment if available:
+If you already have the Streamlit virtual environment, activate it:
 
-```cmd
+```bat
 venv\Scripts\activate
 ```
 
-Install the Streamlit application's direct dependencies:
+Install the dashboard dependencies:
 
-```cmd
+```bash
 python -m pip install -r requirements.txt
 ```
 
-### Step 5: Configure the API URL
+Use a Python version compatible with the packages specified in `requirements.txt`.
+
+### Step 6: Configure the API URL
 
 For local development, the dashboard defaults to:
 
@@ -192,23 +219,27 @@ For local development, the dashboard defaults to:
 http://127.0.0.1:8000
 ```
 
-If needed, set the environment variable in Windows Command Prompt:
+If necessary, configure the API URL in Windows Command Prompt:
 
-```cmd
+```bat
 set API_BASE_URL=http://127.0.0.1:8000
 ```
 
-Set this in the same terminal from which you will start Streamlit.
+Run this command in the same terminal from which you will start Streamlit.
 
-### Step 6: Start Streamlit
+### Step 7: Start Streamlit
 
-```cmd
+Run:
+
+```bash
 streamlit run app/app.py
 ```
 
-Open http://localhost:8501 in your browser.
+Open the dashboard at:
 
-Both the FastAPI backend and Streamlit frontend must be running for predictions to work locally.
+http://localhost:8501
+
+Both the FastAPI backend and Streamlit frontend must be running for local predictions to work.
 
 ## 9. Project Structure
 
@@ -218,7 +249,8 @@ The following is a simplified overview of the repository:
 zimbabwe-weather-intelligence-MACROEDTECH/
 ├── app/
 │   ├── api.py
-│   └── app.py
+│   ├── app.py
+│   └── zimbabwe_flag.png
 ├── data/
 │   ├── raw/
 │   ├── processed/
@@ -238,35 +270,46 @@ zimbabwe-weather-intelligence-MACROEDTECH/
 └── README.md
 ```
 
-This is a simplified representation. Additional notebooks, scripts, data files, and reports may be present in the repository.
+This is a simplified representation. Additional notebooks, scripts, reports, and supporting files may be present in the repository.
 
 ## 10. Reproducibility and Limitations
 
-* The API dependencies are recorded in `api_requirements.txt`.
-* The Streamlit application's dependencies are recorded in `requirements.txt`.
+* API dependencies are recorded in `api_requirements.txt`.
+* Dashboard dependencies are recorded in `requirements.txt`.
 * Virtual environments and selected large data files are excluded from Git.
-* A clean setup requires the historical CSV and trained model files to be available at the paths expected by the application.
+* A clean setup requires the historical CSV and trained model to be available at the paths expected by the application.
 * The deployed prediction endpoint uses XGBoost. LSTM experiments are documented separately.
-* Prediction quality depends on the relevance and quality of the supplied inputs and the historical data used to train the model.
-* The model's reported test performance does not guarantee the same accuracy in future periods.
-* The application does not independently retrieve current observations or provide official weather warnings.
+* Predictions depend on the quality and relevance of the supplied weather inputs.
+* Reported test performance does not guarantee the same accuracy in future periods.
+* The application does not independently retrieve current weather observations or issue official weather warnings.
+* Performance during extreme weather conditions requires further evaluation.
 * Free-tier hosting services may experience cold starts, temporary delays, or usage limitations.
 
 ## 11. Automated Testing
 
 The FastAPI backend has an automated test suite in `tests/test_api.py`.
 
-The tests cover core API behaviour, including health checks, city selection, and prediction requests.
+The tests cover core API behaviour, including:
 
-The test suite previously completed with seven passing tests in the development environment. Tests should be rerun after significant changes to the API or model integration.
+* Root endpoint response
+* API health check
+* Supported city selection
+* Successful prediction requests
+* Rejection of unknown cities
+* Rejection of invalid date-time values
+* Rejection of requests with missing required fields
+
+The test suite completed with seven passing tests in the development environment.
 
 To run the tests locally, activate the API environment and execute:
 
-```cmd
+```bash
 python -m pytest -v
 ```
 
-If pytest is not installed in the active environment, install it before running the command.
+If pytest is not installed, install it in the API environment before running the command.
+
+Tests should be rerun after significant changes to the API, model, or prediction logic.
 
 ## 12. Technologies Used
 
@@ -276,35 +319,41 @@ If pytest is not installed in the active environment, install it before running 
 * **Deep learning experiments:** TensorFlow/Keras
 * **API development:** FastAPI, Uvicorn
 * **Interactive dashboard:** Streamlit
-* **Development and version control:** VS Code, Git, GitHub
+* **Development:** Visual Studio Code
+* **Version control:** Git, GitHub
 * **Deployment:** Render, Streamlit Community Cloud
 
 ## 13. Project Status and Future Work
 
-The project has progressed from model development to a deployed end-to-end application.
+The project has progressed from historical weather data processing and model evaluation to a deployed end-to-end application.
 
 ### Completed milestones
 
-* Historical hourly weather data collection and preprocessing for four Zimbabwean cities, covering 2015–2025.
-* Feature engineering and evaluation of baseline machine learning, ensemble learning, and LSTM approaches.
-* Selection of XGBoost as the best-performing evaluated model.
-* Development of a FastAPI prediction backend and an interactive Streamlit dashboard.
-* Deployment of the API on Render and the dashboard on Streamlit Community Cloud.
-* Verification of the API health endpoint.
-* Successful prediction tests for Harare, Bulawayo, Mutare, and Gweru.
-* Automated API testing during development.
+* Collected and preprocessed historical hourly weather data for four Zimbabwean cities covering 2015–2025.
+* Performed feature engineering and evaluated baseline, regression, ensemble, and LSTM models.
+* Selected XGBoost as the best-performing evaluated model.
+* Developed a FastAPI prediction backend.
+* Developed an interactive Streamlit dashboard.
+* Deployed the API on Render and the dashboard on Streamlit Community Cloud.
+* Verified the public API health endpoint and interactive API documentation.
+* Tested predictions for Harare, Bulawayo, Mutare, and Gweru.
+* Developed and ran an automated API test suite, with seven tests passing.
+* Documented model evaluation results, system architecture, setup instructions, and limitations.
 
 ### Potential future improvements
 
-* More comprehensive automated and integration testing.
-* Monitoring API availability and prediction failures.
-* Additional model validation across cities, seasons, and extreme weather conditions.
-* Improved prediction visualizations and uncertainty estimates.
-* Further analysis of satellite imagery and environmental change.
-* Expanded documentation and deployment monitoring.
+* Expand automated testing to include frontend-backend integration and deployment checks.
+* Monitor API availability, response times, and prediction failures.
+* Evaluate model performance separately across cities, seasons, and extreme weather conditions.
+* Introduce prediction uncertainty estimates where appropriate.
+* Improve prediction visualisations and user guidance.
+* Continue satellite imagery and environmental change analysis.
+* Improve deployment monitoring and reproducibility documentation.
 
 ## 14. Repository
 
-**GitHub:** [roseTadiwa/zimbabwe-weather-intelligence-MACROEDTECH](https://github.com/roseTadiwa/zimbabwe-weather-intelligence-MACROEDTECH)
+**GitHub Repository:**
 
-This project demonstrates an end-to-end data science workflow, from historical data preparation and model evaluation to API development, web application integration, testing, and cloud deployment.
+https://github.com/roseTadiwa/zimbabwe-weather-intelligence-MACROEDTECH
+
+This project demonstrates an end-to-end data science workflow, from historical data preparation and model evaluation to API development, application integration, automated testing, and cloud deployment.

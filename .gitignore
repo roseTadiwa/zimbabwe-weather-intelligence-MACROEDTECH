@@ -46,3 +46,11 @@ data/processed/lstm_data/
 data/processed/lstm_data_v2/
 data/processed/zimbabwe_weather_features.csv
 data/processed/zimbabwe_weather_model.csv
+
+# LaTeX generated files
+*.aux
+*.fdb_latexmk
+*.fls
+*.out
+*.synctex.gz
+*.toc

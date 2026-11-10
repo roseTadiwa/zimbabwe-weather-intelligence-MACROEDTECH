@@ -1,0 +1,20 @@
+Zimbabwe Weather Research: Demonstration Knowledge Document
+
+Weather describes short-term atmospheric conditions at a particular place
+and time. Examples include temperature, rainfall, humidity, cloud cover
+and wind speed.
+
+Climate describes long-term patterns in weather, commonly assessed using
+observations over periods of 30 years or more.
+
+Rainfall and temperature patterns in Zimbabwe vary by season, location,
+elevation and year. A general description of the climate cannot establish
+the current weather conditions in a particular town.
+
+Temperature prediction models estimate a target variable using patterns
+learned from historical data. A one-hour-ahead temperature prediction
+should be reported as a model estimate, not as a direct observation or
+a guarantee of future conditions.
+
+Reliable weather research should distinguish observed data, model
+predictions, scientific background information and uncertainty.

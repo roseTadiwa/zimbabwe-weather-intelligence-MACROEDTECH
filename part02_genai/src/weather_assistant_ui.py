@@ -12,6 +12,17 @@ import requests
 
 import streamlit as st
 
+import os
+
+# Load Gemini API key from Streamlit Cloud Secrets
+try:
+    if "GEMINI_API_KEY" in st.secrets:
+        gemini_api_key = st.secrets["GEMINI_API_KEY"]
+        os.environ["GEMINI_API_KEY"] = gemini_api_key
+        os.environ["GOOGLE_API_KEY"] = gemini_api_key
+except (FileNotFoundError, KeyError):
+    pass
+
 from langchain_core.messages import HumanMessage, SystemMessage
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]

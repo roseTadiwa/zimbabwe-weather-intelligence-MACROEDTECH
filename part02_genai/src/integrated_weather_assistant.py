@@ -25,8 +25,8 @@ from langchain.tools import tool
 
 from langchain_community.vectorstores import FAISS
 
-from langchain_ollama import ChatOllama, OllamaEmbeddings
 
+from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_mcp_adapters.client import MultiServerMCPClient
 
 
@@ -52,11 +52,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 FAISS_INDEX_PATH = (
-
-    PROJECT_ROOT / "part02_genai" / "data" / "faiss_index"
-
+    PROJECT_ROOT / "part02_genai" / "data" / "faiss_index_gemini"
 )
-
 
 
 MCP_SERVER_FILE = (
@@ -90,47 +87,26 @@ MAX_RETURNED_EVIDENCE = 5  # Final passages shown to the assistant/user
 
 
 def load_knowledge_base():
-
-    """Load the saved FAISS index and return its retriever."""
-
-
+    """Load the saved Gemini FAISS index and return its retriever."""
 
     if not FAISS_INDEX_PATH.exists():
-
         raise FileNotFoundError(
-
             f"FAISS index not found: {FAISS_INDEX_PATH}\n"
-
             "Run build_knowledge_base.py first."
-
         )
 
-
-
-    embeddings = OllamaEmbeddings(
-
-        model="nomic-embed-text"
-
+    embeddings = GoogleGenerativeAIEmbeddings(
+        model="models/gemini-embedding-001"
     )
-
-
 
     vector_store = FAISS.load_local(
-
         str(FAISS_INDEX_PATH),
-
         embeddings,
-
         allow_dangerous_deserialization=True,
-
     )
 
-
-
     return vector_store.as_retriever(
-
         search_kwargs={"k": RETRIEVAL_RESULTS}
-
     )
 
 
@@ -2347,13 +2323,10 @@ async def main():
 
 
 
-    llm = ChatOllama(
-
-        model="llama3.2:3b",
-
-        temperature=0,
-
-    )
+    llm = ChatGoogleGenerativeAI(
+    model="gemini-3.8-flash",
+    
+)
 
 
 
@@ -2381,7 +2354,7 @@ async def main():
 
     print("ZIMBABWE WEATHER RESEARCH ASSISTANT")
 
-    print("FAISS + Ollama + LangChain + MCP + XGBoost API")
+    print("FAISS + Gemini + LangChain + MCP + XGBoost API")
 
     print("Research retrieval: enabled")
 

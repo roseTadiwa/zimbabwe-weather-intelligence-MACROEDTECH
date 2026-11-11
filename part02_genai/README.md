@@ -1,365 +1,264 @@
-# Zimbabwe Weather Intelligence – Part 2: Generative AI Weather Research Assistant
+# Zimbabwe Weather Intelligence System
 
-## 1. Project Overview
+An integrated weather intelligence application combining machine learning-based temperature forecasting with a Generative AI research assistant for Zimbabwean climate information.
 
-Part 2 extends the Zimbabwe Weather Intelligence System developed in Part 1 by integrating Generative AI technologies to create an intelligent, domain-specific Weather Research Assistant.
+## Project Overview
 
-The application combines a Retrieval-Augmented Generation (RAG) pipeline, a locally hosted Large Language Model (LLM), vector-based semantic search, AI agents, workflow orchestration and Model Context Protocol (MCP) tools. It also integrates with the weather prediction API developed in Part 1.
+The Zimbabwe Weather Intelligence System consists of two main components:
 
-The system is designed to provide users with research-based information about Zimbabwe's climate and weather, retrieve relevant information from scientific and policy documents, explain documented climate impacts, and interact with the existing temperature prediction service.
+**Part 1: Weather Prediction System**
+- Uses historical weather data from Open-Meteo (2015–2025).
+- Applies an XGBoost machine learning model to predict temperature one hour ahead.
+- Provides a Flask-based prediction API.
+- Hosted on Render.
 
-The application is developed locally using free and open-source technologies, with Ollama providing local LLM and embedding model execution.
+**Part 2: GenAI Weather Research Assistant**
+- Provides a conversational interface for weather and climate-related questions.
+- Uses Google's Gemini models for language generation and document embeddings.
+- Uses Retrieval-Augmented Generation (RAG) to retrieve relevant information from Zimbabwean climate documents.
+- Uses FAISS for vector storage and similarity-based document retrieval.
+- Integrates weather prediction functionality through Model Context Protocol (MCP).
+- Provides an interactive Streamlit interface.
 
-## 2. Project Objectives
+## System Architecture
 
-The main objectives of Part 2 are to:
+The system integrates machine learning, generative AI, document retrieval and API-based services.
 
-- Develop a domain-specific weather knowledge base using relevant Zimbabwean climate and environmental documents.
-- Implement document processing, text chunking and embedding generation.
-- Store document embeddings in a FAISS vector database.
-- Implement semantic search and a Retrieval-Augmented Generation pipeline.
-- Develop an AI-powered research assistant using a locally hosted LLM.
-- Implement intelligent agent workflows using LangChain and LangGraph.
-- Integrate external functionality through the Model Context Protocol.
-- Maintain conversation context through short-term conversation memory.
-- Connect the GenAI application to the Part 1 weather prediction API.
-- Provide an interactive interface through Streamlit.
+### Part 1: Weather Prediction Architecture
 
-## 3. Main System Features
+1. Historical weather data is collected from Open-Meteo.
+2. Data is processed and prepared for model training.
+3. An XGBoost model is trained to predict temperature one hour ahead.
+4. The trained model is exposed through a Flask API.
+5. The API is deployed on Render for external access.
 
-### 3.1 Weather Research Assistant
+**Prediction API:**  
+https://zimbabwe-weather-intelligence-macroedtech.onrender.com
 
-The Research Assistant allows users to ask questions about Zimbabwe's climate, weather patterns, drought impacts, agricultural vulnerability, water availability and environmental issues.
+### Part 2: GenAI Architecture
 
-Its main capabilities include:
+The GenAI assistant follows this workflow:
 
-- Retrieving relevant information from the weather knowledge base.
-- Searching scientific and policy documents using semantic similarity.
-- Generating responses grounded in retrieved information.
-- Providing source references to support research findings.
-- Explaining documented historical climate impacts and future projections.
-- Maintaining recent conversation context during an interaction.
+1. **Document Processing:** Zimbabwean climate and environmental documents are loaded and divided into smaller text chunks.
+2. **Embedding Generation:** Google's Gemini embedding model (`gemini-embedding-001`) converts document chunks into numerical representations.
+3. **Vector Storage:** FAISS stores the embeddings in a searchable vector index.
+4. **Information Retrieval:** Relevant document chunks are retrieved based on the user's question.
+5. **Response Generation:** Gemini generates responses using the retrieved information.
+6. **Tool Integration:** MCP connects the assistant to the deployed weather prediction API, allowing it to access weather-related functionality.
+7. **User Interface:** Streamlit provides the interactive application through which users access the assistant.
 
-### 3.2 Retrieval-Augmented Generation (RAG)
-
-The RAG pipeline combines document retrieval with Large Language Model response generation.
-
-The process involves:
-
-1. Loading relevant research documents.
-2. Extracting and processing document content.
-3. Splitting documents into smaller text chunks.
-4. Generating embeddings using the Ollama embedding model.
-5. Storing the embeddings in a FAISS vector database.
-6. Retrieving relevant chunks through semantic search when a question is submitted.
-7. Passing the retrieved evidence to the LLM to generate a context-grounded response.
-
-### 3.3 AI Agents and Workflow Orchestration
-
-The application uses LangChain to create an AI agent capable of interacting with available tools.
-
-LangGraph is used to orchestrate the agent workflow, including agent execution and response validation.
-
-The available functionality includes:
-
-- Searching the weather knowledge base.
-- Retrieving supported cities from the prediction service.
-- Checking the weather API's health status.
-- Accessing the temperature prediction functionality through the MCP integration.
-
-### 3.4 Model Context Protocol (MCP)
-
-MCP provides a standardised way for the AI application to communicate with external tools.
-
-A weather MCP server exposes tools that interact with the Part 1 prediction API. These include:
-
-- `get_available_cities` – retrieves the cities supported by the prediction service.
-- `get_weather_api_health` – checks the availability and operational status of the API.
-- `predict_temperature` – submits weather input values to obtain a temperature prediction.
-
-The integrated assistant uses MCP to access these tools. The Streamlit temperature prediction interface also communicates directly with the deployed prediction API.
-
-### 3.5 Temperature Prediction Integration
-
-The GenAI application integrates with the existing Part 1 temperature prediction service.
-
-The prediction model uses XGBoost to generate a temperature prediction one hour ahead based on supplied weather input values.
-
-Users can explore different input conditions through the Temperature Prediction interface.
-
-The system does not independently retrieve live weather observations. Predictions depend on the quality and relevance of the supplied input values.
-
-### 3.6 Conversation Memory
-
-The application maintains recent conversation context to support follow-up questions.
-
-The current implementation retains the latest ten messages, equivalent to five user-assistant exchanges, during the conversation session.
-
-## 4. Technologies and Tools
+### Technology Stack
 
 | Component | Technology |
 |---|---|
 | Programming language | Python |
-| Local LLM runtime | Ollama |
-| Language model | Llama 3.2:3b |
-| Embedding model | nomic-embed-text |
-| AI application framework | LangChain |
-| Workflow orchestration | LangGraph |
-| Tool integration | Model Context Protocol (MCP) |
+| Data processing | Pandas, NumPy |
+| Machine learning | XGBoost |
+| Prediction API | Flask |
+| API hosting | Render |
+| Generative AI | Google Gemini |
+| Embeddings | Gemini Embedding (`gemini-embedding-001`) |
+| LLM integration | LangChain |
+| Agent orchestration | LangGraph |
 | Vector database | FAISS |
-| Data processing | Pandas and NumPy |
-| Prediction model | XGBoost |
-| Prediction API | FastAPI (Part 1) |
-| User interface | Streamlit |
-| Document processing | PyPDF |
-| Version control | Git and GitHub |
-| Development environment | Visual Studio Code |
+| Retrieval approach | Retrieval-Augmented Generation (RAG) |
+| Tool integration | Model Context Protocol (MCP) |
+| Application interface | Streamlit |
+| Deployment target for Part 2 | Streamlit Community Cloud |
 
-## 5. Knowledge Base and Research Sources
-
-The domain-specific knowledge base is built from research materials relating to Zimbabwe's climate, environmental conditions and climate-related risks.
-
-The source documents include:
-
-- `weather_research_basics.txt`
-- `zimbabwe_climate_risk_country_profile.pdf`
-- `zimbabwe_revised_ndc_2021.pdf`
-- `zimbabwe_revised_ndc_evidence.md`
-
-These materials provide information on climate vulnerability, drought impacts, agricultural challenges, water availability, greenhouse gas emissions and environmental risks.
-
-The processed documents are converted into text chunks and indexed using FAISS to support semantic retrieval.
-
-## 6. Project Structure
-
-The following is a simplified representation of the Part 2 directory structure:
+## Project Structure
 
 ```text
-part02_genai/
-│
-├── README.md
-├── requirements.txt
-│
-├── src/
-│   ├── agent_assistant.py
-│   ├── build_knowledge_base.py
-│   ├── evaluate_weather_assistant.py
-│   ├── integrated_weather_assistant.py
-│   ├── mcp_agent_assistant.py
-│   ├── rag_assistant.py
-│   ├── rag_memory_assistant.py
-│   ├── review_weather_evaluation.py
-│   ├── test_mcp_client.py
-│   ├── weather_assistant_ui.py
-│   └── weather_mcp_server.py
+zimbabwe-weather-intelligence/
 │
 ├── data/
-│   └── faiss_index/
+│   └── ...
 │
-├── documents/
-│   ├── weather_research_basics.txt
-│   ├── zimbabwe_climate_risk_country_profile.pdf
-│   ├── zimbabwe_revised_ndc_2021.pdf
-│   └── zimbabwe_revised_ndc_evidence.md
+├── models/
+│   └── ...
 │
 ├── reports/
-│   └── evaluation/
+│   └── ...
 │
-├── tests/
+├── part02_genai/
+│   │
+│   ├── data/
+│   │   └── faiss_index_gemini/
+│   │
+│   ├── documents/
+│   │   └── ...
+│   │
+│   ├── src/
+│   │   ├── weather_assistant_ui.py
+│   │   ├── integrated_weather_assistant.py
+│   │   ├── build_knowledge_base.py
+│   │   └── weather_mcp_server.py
+│   │
+│   └── requirements.txt
 │
-└── venv/
+├── requirements.txt
+├── README.md
+└── ...
 ```
 
-The `venv` directory contains the local Python virtual environment and is not required to be committed to GitHub.
+*Note: The structure above highlights the main files relevant to Part 2. Other project files and directories are omitted for clarity.*
 
-## 7. Installation and Setup
+## Installation and Setup
 
-### 7.1 Prerequisites
+### 1. Clone the Repository
 
-Before running the application, ensure that the following are installed:
-
-- Python 3.12
-- Visual Studio Code or another Python development environment
-- Git
-- Ollama
-- An internet connection for accessing the deployed prediction API
-
-### 7.2 Clone the Repository
-
-Open Windows Command Prompt and run:
-
-```cmd
+```bash
 git clone https://github.com/roseTadiwa/zimbabwe-weather-intelligence-MACROEDTECH.git
+```
+
+Navigate into the project directory:
+
+```bash
 cd zimbabwe-weather-intelligence-MACROEDTECH
 ```
 
-### 7.3 Create and Activate the Virtual Environment
+### 2. Create a Virtual Environment
 
-From the project root directory:
-
-```cmd
-python -m venv part02_genai\venv
-part02_genai\venv\Scripts\activate
+```bash
+python -m venv part02_genai/venv
 ```
 
-### 7.4 Install Dependencies
-
-Install the packages listed in the Part 2 requirements file:
-
-```cmd
-python -m pip install -r part02_genai\requirements.txt
-```
-
-Install Streamlit if it is not already included in the requirements:
-
-```cmd
-python -m pip install streamlit
-```
-
-### 7.5 Install and Configure Ollama Models
-
-Install Ollama and ensure that the Ollama service is running.
-
-Download the language model:
-
-```cmd
-ollama pull llama3.2:3b
-```
-
-Download the embedding model:
-
-```cmd
-ollama pull nomic-embed-text
-```
-
-Confirm that both models are available:
-
-```cmd
-ollama list
-```
-
-The application uses these models locally for language generation and document embedding.
-
-## 8. Running the Application
-
-From the repository root directory, activate the virtual environment if it is not already active:
+Activate the environment on Windows:
 
 ```cmd
 part02_genai\venv\Scripts\activate
 ```
 
-Start the Streamlit application:
+### 3. Install Dependencies
 
-```cmd
-streamlit run part02_genai\src\weather_assistant_ui.py
+```bash
+python -m pip install -r part02_genai/requirements.txt
 ```
 
-Streamlit will provide a local URL, normally:
+### 4. Configure the Gemini API Key
+
+The GenAI assistant requires a Google Gemini API key.
+
+Obtain an API key through Google AI Studio and configure it as an environment variable.
+
+On Windows Command Prompt:
+
+```cmd
+set GEMINI_API_KEY=your_api_key
+```
+
+For persistent local configuration, use a Windows environment variable instead.
+
+Do not hardcode API keys in source files or commit them to GitHub.
+
+For Streamlit Community Cloud deployment, configure the key through the application's Secrets settings.
+
+### 5. Build the Knowledge Base
+
+If the Gemini FAISS index has not already been generated, run:
+
+```cmd
+python part02_genai\src\build_knowledge_base.py
+```
+
+This processes the available climate documents, generates Gemini embeddings and saves the resulting FAISS index.
+
+The application uses:
+
+```text
+part02_genai/data/faiss_index_gemini/
+```
+
+The knowledge base only needs to be rebuilt when the source documents are changed or the index needs to be regenerated.
+
+## Running the Application Locally
+
+From the repository root, activate the virtual environment and run:
+
+```cmd
+python -m streamlit run part02_genai\src\weather_assistant_ui.py
+```
+
+Open the local application in your browser:
 
 ```text
 http://localhost:8501
 ```
 
-Open the displayed URL in a web browser.
+The application provides access to the GenAI research assistant and its integrated weather prediction functionality.
 
-The application provides the following main sections:
+## Deployment
 
-- **Research Assistant:** Allows users to submit weather and climate research questions.
-- **Temperature Prediction:** Provides an interface for submitting weather conditions and obtaining one-hour-ahead temperature predictions.
-- **About:** Provides information about the application and its technologies.
+### Part 1: Render
 
-The Ollama service must be running for local LLM and embedding functionality. The deployed Part 1 prediction API must be accessible for temperature prediction requests.
+The Flask-based XGBoost prediction API is deployed on Render.
 
-## 9. Prediction API
+API endpoint:
 
-The application integrates with the deployed Part 1 prediction API:
-
-**Base URL:**  
 https://zimbabwe-weather-intelligence-macroedtech.onrender.com
 
-The API provides the following endpoints:
+The API supports health checks, available-city retrieval and temperature prediction.
 
-| Endpoint | Purpose |
-|---|---|
-| `/` | Returns basic API information |
-| `/health` | Reports API and model status |
-| `/cities` | Returns supported prediction cities |
-| `/predict` | Accepts temperature prediction requests |
-| `/docs` | Provides interactive API documentation |
+**Note:** Render's free service may spin down after inactivity. The MCP server implements automatic retries to accommodate API cold starts when prediction requests are made.
 
-The supported cities are:
+### Part 2: Streamlit Community Cloud
 
-- Harare
-- Bulawayo
-- Mutare
-- Gweru
+The Streamlit application is intended for deployment through Streamlit Community Cloud.
 
-The prediction service uses the trained XGBoost model to predict temperature one hour ahead.
+Deployment configuration:
 
-## 10. Evaluation and Testing
+- Repository: `roseTadiwa/zimbabwe-weather-intelligence-MACROEDTECH`
+- Branch: `master`
+- Main application file: `part02_genai/src/weather_assistant_ui.py`
+- Dependencies: `part02_genai/requirements.txt`
+- Secret: `GEMINI_API_KEY`
 
-The application was evaluated through functional testing, research-question testing and manual review of generated responses.
+The Gemini API key must be configured through Streamlit Secrets and must not be committed to the repository.
 
-The evaluation activities included:
+## Key Features
 
-- Verifying application startup and interface accessibility.
-- Checking Ollama model availability and embedding generation.
-- Testing research questions against the weather knowledge base.
-- Checking the retrieval of documented climate and drought evidence.
-- Testing the temperature prediction API integration.
-- Testing MCP tools for supported cities, API health and temperature prediction.
-- Checking LangGraph agent execution and response validation.
-- Assessing the assistant's ability to retain recent conversation context.
+### Weather Prediction
+- One-hour-ahead temperature prediction.
+- Integration with the deployed XGBoost model.
+- Access to supported Zimbabwean cities.
+- API-based prediction requests.
 
-Evaluation outputs are stored in:
+### GenAI Research Assistant
+- Natural-language interaction.
+- Retrieval of relevant information from Zimbabwean climate documents.
+- Gemini-powered response generation.
+- FAISS-based semantic document retrieval.
+- Evidence-supported responses using retrieved document references.
+- Integration with weather prediction tools through MCP.
 
-```text
-part02_genai/reports/evaluation/
-```
+## Important Configuration and Usage Notes
 
-The directory contains automated evaluation and manual-review results in CSV and JSON formats.
+- An active internet connection is required for Gemini API access and communication with the deployed prediction API.
+- Gemini API usage is subject to the applicable model quotas and rate limits.
+- The prediction API may take time to respond when a free Render instance is waking up.
+- The FAISS index must be available for document retrieval.
+- API credentials must be stored securely outside the source code.
+- Free hosting and API services are subject to provider limits and availability.
 
-The evaluation results should be interpreted in the context of the questions tested and the available research sources. They do not establish that every possible weather or climate question can be answered accurately.
+## Future Improvements
 
-## 11. Limitations
+Potential areas for further development include:
 
-The current implementation has the following limitations:
+- Improved weather prediction accuracy and model evaluation.
+- Expansion of the climate knowledge base.
+- Enhanced source attribution and evidence presentation.
+- Improved API cold-start handling and response reliability.
+- Additional weather intelligence and climate analytics capabilities.
+- Improved application monitoring and deployment reliability.
 
-- The Research Assistant's knowledge is limited to the documents and information included in its knowledge base.
-- Generated responses depend on the quality and relevance of retrieved evidence.
-- The application does not independently retrieve live weather observations.
-- The temperature prediction service predicts temperature one hour ahead; it does not directly provide rainfall probabilities, thunderstorm predictions or official weather warnings.
-- Prediction quality depends on the supplied weather input values.
-- The prediction API may experience delays or cold starts because it is hosted on a free-tier service.
-- Some application components require further testing and refinement to improve reliability and response consistency.
-- Conversation memory is limited to the recent messages retained during the active session.
+## Author
 
-## 12. Future Improvements
+**Rosemary Mtape**
 
-Potential improvements include:
+Data Science and Systems Graduate
 
-- Expanding the weather knowledge base with additional scientific and authoritative climate sources.
-- Improving retrieval relevance and response accuracy.
-- Expanding automated testing of the RAG pipeline and agent workflows.
-- Strengthening tool execution and error handling.
-- Improving evaluation of generated research responses.
-- Introducing more analytical tools for weather and climate research.
-- Improving user interaction and the presentation of research findings.
-- Exploring additional weather prediction and climate analysis capabilities.
+GitHub: [roseTadiwa](https://github.com/roseTadiwa)
 
-## 13. Conclusion
+Project: Zimbabwe Weather Intelligence System
 
-Part 2 extends the Zimbabwe Weather Intelligence System by introducing Generative AI capabilities for weather research and interaction with the existing prediction service.
-
-Through the integration of Ollama, LangChain, LangGraph, FAISS, RAG and MCP, the application demonstrates how open-source Generative AI technologies can be combined with an existing machine learning prediction system.
-
-The resulting application provides a foundation for research-oriented weather information retrieval, evidence-based question answering and interaction with predictive weather services.
-
-## 14. Repository
-
-**GitHub Repository:**
-
-https://github.com/roseTadiwa/zimbabwe-weather-intelligence-MACROEDTECH
-
-**Part 2 Application:**  
-The application is run locally using Streamlit, with the Part 1 temperature prediction API accessed through its deployed endpoint.
+Developed as part of the MacroEdTech programme.

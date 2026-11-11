@@ -1,16 +1,17 @@
 from pathlib import Path
 import re
+import time
 
 from pypdf import PdfReader
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_ollama import OllamaEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import FAISS
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 DOCUMENTS_DIR = PROJECT_DIR / "documents"
 DATA_DIR = PROJECT_DIR / "data"
-INDEX_DIR = DATA_DIR / "faiss_index"
+INDEX_DIR = DATA_DIR / "faiss_index_gemini"
 DOCUMENTS_DIR.mkdir(parents=True, exist_ok=True)
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -178,10 +179,40 @@ ndc_chunks = [c for c in chunks if c.metadata.get("record_type") == "ndc_page_ex
 if not ndc_chunks:
     raise RuntimeError("NDC page-labelled chunks were lost during splitting.")
 
-print("Loading Ollama embedding model: nomic-embed-text")
-embeddings = OllamaEmbeddings(model="nomic-embed-text")
-print("Building FAISS index...")
-vector_store = FAISS.from_documents(chunks, embeddings)
+print("Loading Gemini embedding model: gemini-embedding-001")
+embeddings = GoogleGenerativeAIEmbeddings(
+    model="models/gemini-embedding-001"
+)
+print("Building FAISS index in controlled batches...")
+
+batch_size = 50
+text_embeddings = []
+all_texts = [doc.page_content for doc in chunks]
+all_metadatas = [doc.metadata for doc in chunks]
+
+for start in range(0, len(all_texts), batch_size):
+    end = min(start + batch_size, len(all_texts))
+
+    batch_texts = all_texts[start:end]
+
+    print(f"Embedding chunks {start + 1} to {end} of {len(all_texts)}...")
+
+    batch_vectors = embeddings.embed_documents(batch_texts)
+
+    text_embeddings.extend(zip(batch_texts, batch_vectors))
+
+    print(f"Completed {end} of {len(all_texts)} chunks.")
+
+    if end < len(all_texts):
+        print("Waiting 35 seconds to respect Gemini rate limits...")
+        time.sleep(35)
+
+vector_store = FAISS.from_embeddings(
+    text_embeddings,
+    embeddings,
+    metadatas=all_metadatas,
+)
+
 vector_store.save_local(str(INDEX_DIR))
 print(f"FAISS index saved: {INDEX_DIR}")
 

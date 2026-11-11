@@ -288,11 +288,13 @@ st.caption(
 
 def load_research_resources():
 
-    """Load the FAISS retriever and local model used by the research workflow."""
+    """Load the Gemini FAISS retriever and Gemini model."""
 
     retriever = assistant.load_knowledge_base()
 
-    llm = assistant.ChatOllama(model="llama3.2:3b", temperature=0)
+    llm = assistant.ChatGoogleGenerativeAI(
+        model="gemini-3.8-flash",
+    )
 
     return retriever, llm
 
@@ -323,10 +325,9 @@ async def _run_agent_graph(messages):
 
     research_tool = assistant.create_research_tool(retriever)
 
-    llm = assistant.ChatOllama(
-        model="llama3.2:3b",
-        temperature=0,
-    )
+    llm = assistant.ChatGoogleGenerativeAI(
+    model="gemini-3.8-flash",
+                )
 
     agent = assistant.create_agent(
         model=llm,
@@ -1520,14 +1521,10 @@ with tab_research:
             except Exception as exc:
 
                 st.error(
-
-                    "The assistant could not complete this request. Check that "
-
-                    "Ollama is running, the required models are installed, the "
-
-                    "FAISS index exists, and the MCP server can start."
-
-                )
+    "The assistant could not complete this request. Check that "
+    "the Gemini API key is configured, the FAISS index exists, "
+    "and the MCP server can start."
+)
 
                 st.code(str(exc))
 
@@ -1838,7 +1835,7 @@ with tab_about:
 
     st.markdown(
 
-        "- **Research:** local FAISS retrieval and `llama3.2:3b` through Ollama.\n"
+        "- **Research:** Gemini-powered responses with FAISS document retrieval using Gemini embeddings.\n"
 
         "- **Agent orchestration:** LangGraph with the existing MCP weather tools "
 

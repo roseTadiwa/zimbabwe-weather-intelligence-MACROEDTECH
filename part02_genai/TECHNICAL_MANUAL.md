@@ -4,11 +4,12 @@
 **Project:** Zimbabwe Weather Intelligence  
 **Organisation:** MacroEdTech  
 **Component:** Part 2 – Generative AI Integration  
-**Primary Language:** Python  
-**Local LLM:** Ollama – Llama 3.2:3b  
-**Embedding Model:** Ollama – nomic-embed-text  
-**Vector Database:** FAISS  
-**User Interface:** Streamlit  
+**Primary language:** Python  
+**User interface:** Streamlit  
+**Deployed LLM and embedding service:** Google Gemini API  
+**Local development LLM:** Ollama – Llama 3.2:3b  
+**Local development embedding model:** Ollama – nomic-embed-text  
+**Vector database:** FAISS  
 
 ---
 
@@ -16,45 +17,76 @@
 
 ## 1.1 Purpose of the Technical Manual
 
-This technical manual documents the implementation, architecture, configuration and operation of Part 2 of the Zimbabwe Weather Intelligence project.
+This manual documents the architecture, implementation, configuration, operation, testing and limitations of Part 2 of the Zimbabwe Weather Intelligence project. It describes the document-based climate research assistant, Retrieval-Augmented Generation (RAG) pipeline, vector knowledge base, agent workflow, Model Context Protocol (MCP) integration and connection to the Part 1 temperature-prediction API.
 
-Part 2 extends the weather prediction functionality developed in Part 1 by integrating Generative AI, Retrieval-Augmented Generation (RAG), local language models, document-based climate research, AI agents and the Model Context Protocol (MCP).
-
-The manual provides technical information on the system components, data processing procedures, knowledge-base construction, model integration, application execution, testing and known limitations.
-
-It is intended to support the understanding, operation, maintenance and further development of the application.
+The manual distinguishes between the original local Ollama implementation and the Gemini-based implementation deployed for browser access. This distinction is necessary because the two configurations use different language and embedding models and therefore require compatible configuration and vector indexes.
 
 ## 1.2 Project Overview
 
-The Zimbabwe Weather Intelligence project combines machine learning-based weather prediction with Generative AI capabilities to provide weather forecasts and contextual climate information for Zimbabwe.
+Part 1 developed a temperature-prediction model using XGBoost and exposed its prediction functionality through a FastAPI service. Part 2 extends that system by adding a Generative AI research assistant that can retrieve information from Zimbabwe-specific climate and environmental documents.
 
-Part 1 developed a temperature prediction model using XGBoost and exposed its prediction functionality through a FastAPI application.
+The application provides two main user-facing capabilities:
 
-Part 2 integrates this existing prediction service with a Generative AI assistant capable of:
+- **Temperature Prediction:** Sends supplied weather input values to the Part 1 API and displays the one-hour-ahead temperature prediction.
+- **Weather and Climate Research:** Retrieves relevant material from a FAISS knowledge base and uses the configured response workflow to answer document-based questions.
 
-- Responding to general weather-related questions.
-- Retrieving information from Zimbabwe-specific climate and weather documents.
-- Providing contextual explanations of historical climate events and agricultural impacts.
-- Accessing weather prediction functionality through MCP tools.
-- Maintaining conversation history during an interaction.
-- Presenting weather predictions and research responses through a Streamlit interface.
+The system also includes an MCP server that exposes tools for checking the prediction API, retrieving supported cities and submitting temperature-prediction requests.
 
-The application uses locally hosted language and embedding models through Ollama, reducing dependence on externally hosted LLM services.
+## 1.3 Development and Deployment Configurations
 
-## 1.3 Objectives
+The project went through two model configurations.
 
-The main objectives of Part 2 are to:
+### A. Original local implementation – Ollama
 
-1. Develop a Zimbabwe-specific climate and weather knowledge base.
-2. Implement document processing, text extraction and chunking.
-3. Generate text embeddings and store them in a FAISS vector database.
-4. Implement semantic search and Retrieval-Augmented Generation.
-5. Integrate local Large Language Models using Ollama.
-6. Develop AI agent workflows using LangChain and LangGraph.
-7. Implement MCP tools to connect the assistant to the existing weather prediction API.
-8. Maintain conversational context during user interactions.
-9. Integrate the different capabilities into a Streamlit application.
-10. Evaluate the system's retrieval, prediction integration and conversational functionality.
+The application was initially developed and tested on the developer's local computer using Ollama. This was the original working local implementation, and its code has been retained:
+
+| Component | Local configuration |
+|---|---|
+| Language model | `llama3.2:3b` |
+| Embedding model | `nomic-embed-text` |
+| LangChain integration | `ChatOllama` / `OllamaEmbeddings` |
+| Vector store | FAISS |
+| Interface | Streamlit |
+
+This configuration allowed local model execution without sending language-generation and embedding requests to a hosted Gemini service. The Ollama implementation has been retained separately as part of the development work.
+
+### B. Deployed implementation – Gemini
+
+The application was subsequently adapted to use the Gemini API so that it could be deployed on Streamlit Community Cloud and accessed by a supervisor or reviewer through a web browser. This change was made for practical deployment reasons.
+
+Running Ollama as part of a cloud-hosted application would require the hosting environment to store the model files and provide sufficient server resources to run the model. That introduces additional storage, memory and compute requirements, which can increase hosting infrastructure costs. It would also make the deployment more demanding to configure and maintain.
+
+Using Gemini means the language model and embedding workloads are handled by Google's hosted API rather than requiring us to host the Ollama models alongside the Streamlit application. This makes the deployed application easier to access and avoids the need to provision our own model-hosting infrastructure. It does not mean that Gemini is unlimited or necessarily free: API access is subject to the provider's quotas and any applicable pricing.
+
+A reviewer can therefore open the deployed application in a browser without installing Ollama or downloading the local models. The original Ollama implementation remains available as the local working version.
+
+| Component | Deployed configuration |
+|---|---|
+| Language model | Gemini model configured in the application (`gemini-3.8-flash`) |
+| Embedding model | `models/gemini-embedding-001` |
+| LangChain integration | `langchain-google-genai` |
+| Vector store | FAISS |
+| Interface and hosting | Streamlit / Streamlit Community Cloud |
+
+The deployed version requires a Gemini API key and is subject to the service's availability and quota. It is therefore not a fully local LLM implementation. The Part 1 prediction API is hosted separately on Render.
+
+The two implementations should not be described as one identical runtime configuration. They are two configurations of the same Part 2 development work: the retained Ollama version is the local working implementation, while the Gemini version is the online deployment chosen to avoid the additional storage and compute infrastructure needed to host Ollama models in the cloud.
+
+## 1.4 Objectives
+
+The objectives of Part 2 are to:
+
+1. Develop a Zimbabwe-specific weather, climate and environmental knowledge base.
+2. Extract and process text from PDF, Markdown and text documents.
+3. Divide source content into smaller overlapping chunks.
+4. Generate embeddings and store them in a FAISS vector database.
+5. Implement semantic search and Retrieval-Augmented Generation.
+6. Integrate a language model through LangChain.
+7. organise agent execution and response validation through LangGraph.
+8. Implement MCP tools for communication with the Part 1 prediction API.
+9. Maintain short-term conversation context during a user session.
+10. Provide a Streamlit interface for research and temperature prediction.
+11. Test the knowledge-base pipeline, retrieval, API integration and application functionality.
 
 ---
 
@@ -62,228 +94,191 @@ The main objectives of Part 2 are to:
 
 ## 2.1 Architecture Overview
 
-The system consists of several interconnected components that work together to provide weather prediction and climate research capabilities.
+Part 2 has two principal processing paths.
 
-The architecture follows two main processing paths:
+### A. Climate research and document retrieval
 
-**A. Weather prediction and tool integration**
+1. A user submits a climate or weather research question through Streamlit.
+2. The research workflow processes the question.
+3. The question is embedded using the embedding model configured for the selected implementation.
+4. FAISS retrieves semantically relevant knowledge-base chunks.
+5. Retrieved evidence and source metadata are passed to the response workflow.
+6. The configured response workflow generates or formats an answer.
+7. The answer is returned to the Streamlit interface.
 
-The user submits a temperature prediction request. The Streamlit prediction interface sends the required input directly to the Part 1 FastAPI service. The integrated AI assistant can also access the same prediction service through an MCP tool.
+Some selected climate topics use specialised evidence-based response-processing functions rather than relying exclusively on free-form LLM generation.
 
-**B. Climate research and document retrieval**
+### B. Temperature prediction
 
-The user submits a climate or weather research question. The system retrieves relevant information from the local FAISS knowledge base. The retrieved information is used to generate a contextual response, with specialised handling for selected climate research topics.
+1. A user selects a supported city and supplies the required prediction inputs.
+2. The Streamlit prediction interface sends the request to the Part 1 FastAPI endpoint.
+3. The Part 1 service processes the input using its XGBoost model.
+4. The service returns a one-hour-ahead temperature prediction and associated model information.
+5. Streamlit displays the result.
+
+The MCP server provides a separate tool-based route to the same Part 1 API. In the integrated assistant, the `predict_temperature` tool is handled through a Python-controlled MCP workflow. It is not included in the general LangChain agent tool list.
 
 ## 2.2 Main System Components
 
 | Component | Responsibility |
 |---|---|
-| Streamlit | Provides the user interface |
-| Ollama | Hosts local language and embedding models |
-| Llama 3.2:3b | Generates natural-language responses |
-| nomic-embed-text | Converts text into vector embeddings |
-| LangChain | Supports document processing, retrieval and tool integration |
-| LangGraph | Orchestrates AI agent workflows |
-| FAISS | Stores and retrieves document embeddings |
-| MCP | Connects the assistant to external tools and services |
-| FastAPI | Exposes the Part 1 temperature prediction API |
-| XGBoost | Generates one-hour-ahead temperature predictions |
+| Streamlit | User interface for research and prediction |
+| Gemini API | Language generation and embeddings in the deployed configuration |
+| Ollama | Local model execution in the retained local configuration |
+| Llama 3.2:3b | Local language generation |
+| nomic-embed-text | Local text embeddings |
+| `models/gemini-embedding-001` | Embeddings for the deployed Gemini knowledge base |
+| LangChain | Document processing, retrieval, model and tool integration |
+| LangGraph | Agent workflow orchestration |
+| FAISS | Vector storage and similarity retrieval |
+| MCP / FastMCP | Exposes tools that communicate with the Part 1 API |
+| FastAPI | Part 1 prediction API |
+| XGBoost | One-hour-ahead temperature prediction |
+| Git and GitHub | Version control and source-code management |
 
-## 2.3 System Workflow
+## 2.3 Application and Hosting Arrangement
 
-### Document Research Workflow
+The Part 2 Streamlit application is deployed separately from the Part 1 prediction API.
 
-1. The user submits a research question.
-2. The application identifies the type of question.
-3. Relevant documents are retrieved from the FAISS knowledge base.
-4. Retrieved evidence is passed to the appropriate response-processing function.
-5. The local language model generates responses for the general document-research workflow.
-6. Selected specialised questions use deterministic, evidence-based response formatting.
-7. The answer is displayed in Streamlit.
+- **Part 2 Streamlit main file:** `part02_genai/src/weather_assistant_ui.py`
+- **Part 1 API base URL:** `https://zimbabwe-weather-intelligence-macroedtech.onrender.com`
+- **Part 2 hosting:** Streamlit Community Cloud
+- **Part 1 API hosting:** Render
 
-### Temperature Prediction Workflow
+The Gemini API key is configured in Streamlit Community Cloud Secrets under `GEMINI_API_KEY`. It must not be hard-coded into source files or committed to Git.
 
-1. The user selects a supported city.
-2. The user supplies the required weather input variables.
-3. The application sends the input to the Part 1 prediction API.
-4. The XGBoost model generates a one-hour-ahead temperature prediction.
-5. The API returns the prediction and associated model information.
-6. The application displays the result.
-
-The integrated assistant can also invoke the prediction service through the MCP `predict_temperature` tool.
+The Render free-tier service may sleep after inactivity. The first request after a period of inactivity can therefore take longer while the service starts.
 
 ---
 
 # 3. TECHNOLOGY STACK
 
-The following technologies and libraries were used in the implementation.
-
-| Technology | Purpose |
+| Technology / library | Purpose |
 |---|---|
-| Python | Main programming language |
-| Ollama | Local model execution |
-| Llama 3.2:3b | Language generation |
-| nomic-embed-text | Text embedding generation |
-| LangChain | RAG, document processing and tool integration |
+| Python 3.12 | Main programming language |
+| Streamlit | User interface and cloud deployment |
+| Google Gemini API | Deployed language model and embedding service |
+| Ollama | Local language and embedding model execution during development |
+| LangChain | RAG, document processing and tool/model integration |
 | LangGraph | Agent workflow orchestration |
 | FAISS | Vector storage and similarity search |
-| MCP / FastMCP | Tool and service integration |
-| Streamlit | Interactive application interface |
+| MCP / FastMCP | Tool interface to the Part 1 API |
 | FastAPI | Part 1 prediction API |
-| XGBoost | Temperature prediction model |
-| Pandas | Data manipulation |
-| NumPy | Numerical operations |
+| XGBoost | Temperature-prediction model |
 | pypdf | PDF text extraction |
-| Git and GitHub | Version control and source-code management |
+| Pandas / NumPy | Data and numerical operations where required |
+| Git / GitHub | Version control and source-code management |
 
-The application uses locally hosted open-weight models through Ollama.
+The Part 2 Python dependencies are listed in `part02_genai/requirements.txt`. A copy is also maintained at `part02_genai/src/requirements.txt` for Streamlit Community Cloud dependency discovery when the app's main file is configured inside `src/`.
 
 ---
 
 # 4. PROJECT DIRECTORY STRUCTURE
 
-The Part 2 implementation is organised within the main project directory.
-
-The relevant directory structure is:
+The main Part 2 files are organised under `part02_genai/`. The relevant high-level structure is:
 
 ```text
 zimbabwe-weather-intelligence/
-│
-├── part01_weather_prediction/
-│
+├── app/
+│   └── app.py
 ├── part02_genai/
-│   │
 │   ├── documents/
 │   │   ├── weather_research_basics.txt
 │   │   ├── zimbabwe_climate_risk_country_profile.pdf
 │   │   ├── zimbabwe_revised_ndc_2021.pdf
 │   │   └── zimbabwe_revised_ndc_evidence.md
-│   │
 │   ├── data/
-│   │   └── faiss_index/
-│   │
+│   │   └── faiss_index_gemini/
+│   │       ├── index.faiss
+│   │       └── index.pkl
 │   ├── src/
 │   │   ├── build_knowledge_base.py
 │   │   ├── weather_mcp_server.py
 │   │   ├── integrated_weather_assistant.py
 │   │   └── weather_assistant_ui.py
-│   │
-│   ├── venv/
-│   │
-│   ├── README.md
+│   ├── requirements.txt
 │   ├── TECHNICAL_MANUAL.md
-│   └── requirements.txt
-│
+│   └── README.md
 └── README.md
 ```
 
-**Directory descriptions:**
+This is a high-level representation of the relevant files; local virtual-environment folders and other repository files are omitted. Confirm the current repository tree before treating the list as an exhaustive inventory.
 
-- `documents/`: Contains the source documents used to construct the climate and weather knowledge base.
-- `data/faiss_index/`: Stores the generated FAISS vector index.
-- `src/`: Contains the Python scripts responsible for document processing, MCP integration, AI agent workflows and the Streamlit interface.
-- `venv/`: Contains the project's Python virtual environment.
-- `README.md`: Provides the project overview, setup instructions and general usage information.
-- `requirements.txt`: Lists the Python dependencies required by the project.
+**Directory descriptions**
+
+- `documents/`: Source documents used to construct the climate and weather knowledge base.
+- `data/faiss_index_gemini/`: FAISS index generated for the Gemini embedding configuration.
+- `src/`: Python scripts for knowledge-base construction, MCP integration, assistant workflows and the Streamlit interface.
+- `requirements.txt`: Python dependencies for Part 2.
+- `weather_assistant_ui.py`: Main Streamlit interface used by the deployed Part 2 application.
+
+The retained Ollama implementation uses its own model configuration and compatible index. Do not assume that the deployed Gemini index can be used with the Ollama embedding model, or vice versa.
 
 ---
 
-# 5. KNOWLEDGE BASE CONSTRUCTION
+# 5. KNOWLEDGE-BASE CONSTRUCTION
 
 ## 5.1 Overview
 
-A domain-specific knowledge base was developed to provide the assistant with access to Zimbabwe-specific weather, climate and environmental information.
-
-The knowledge base consists of locally stored documents containing climate research, historical climate events, agricultural impacts, vulnerability information and national climate policy evidence.
-
-The source documents are processed, converted into text records, divided into smaller chunks, embedded and stored in a FAISS vector database.
+The knowledge base provides access to Zimbabwe-specific climate, weather, environmental and policy information. The source documents are processed, converted into text records, divided into smaller chunks, embedded and stored in FAISS.
 
 ## 5.2 Source Documents
 
-The following documents were used:
+The documented source set includes:
 
 | Document | Format | Description |
 |---|---|---|
 | `weather_research_basics.txt` | TXT | General weather and climate research information |
-| `zimbabwe_climate_risk_country_profile.pdf` | PDF | Zimbabwe's climate risks, vulnerabilities and sectoral impacts |
-| `zimbabwe_revised_ndc_2021.pdf` | PDF | Zimbabwe's Nationally Determined Contribution and climate commitments |
-| `zimbabwe_revised_ndc_evidence.md` | Markdown | Curated, page-labelled climate evidence extracted from the NDC document |
+| `zimbabwe_climate_risk_country_profile.pdf` | PDF | Zimbabwe climate risks, vulnerabilities and sectoral impacts |
+| `zimbabwe_revised_ndc_2021.pdf` | PDF | National climate commitments and policy evidence |
+| `zimbabwe_revised_ndc_evidence.md` | Markdown | Curated, page-labelled evidence from the NDC document |
 
-The curated NDC evidence document provides additional page-level references for important statistics and historical climate events.
+The curated NDC evidence document provides additional page-level references for selected statistics and historical climate events.
 
 ## 5.3 Document Loading and Text Extraction
 
 Document processing is implemented in:
 
-`part02_genai/src/build_knowledge_base.py`
+```text
+part02_genai/src/build_knowledge_base.py
+```
 
-The script uses:
+The processing workflow uses PDF text extraction and LangChain document objects to preserve extracted text and metadata.
 
-- `pypdf` to extract text from PDF documents.
-- `pathlib` to locate and manage document paths.
-- LangChain `Document` objects to store extracted text and associated metadata.
-
-The document loader supports:
+The loader supports:
 
 - PDF files (`.pdf`)
 - Markdown files (`.md`)
 - Text files (`.txt`)
 
-PDF documents are processed page by page. Each non-empty page is stored as a separate document record.
+PDF documents are processed page by page. Non-empty pages are retained as individual document records. Page-labelled Markdown sections are separated into records where the expected printed-page headings are present. Other Markdown and text files are loaded as document records.
 
-Markdown documents containing headings such as `## Printed page(s) 10–11` are separated into page-labelled records. Other Markdown documents are treated as a single record.
-
-Text files are loaded as individual document records.
-
-Each record contains relevant metadata, including:
+Metadata supports source identification and may include:
 
 - Source filename.
 - File type.
-- Page number or printed-page reference, where available.
+- PDF page number or printed-page reference, where available.
 - Page index, where applicable.
 - Record type.
 
-This metadata supports source identification and document traceability during retrieval.
-
 ## 5.4 Specialised Climate Evidence Processing
 
-The script includes additional processing for selected information in the Nationally Determined Contribution document.
+The build script includes additional checks for selected evidence in the Nationally Determined Contribution material. The documented verification markers include:
 
-### A. Page-labelled NDC evidence verification
+1. Maize production losses associated with the 2016 fall armyworm outbreak.
+2. Elephant deaths in Gonarezhou during the 1991/92 drought.
+3. Annual crop losses.
+4. Cattle deaths associated with tick-borne disease during the 2017/18 period.
+5. AFOLU's contribution to greenhouse gas emissions in 2017.
+6. A mitigation target.
 
-The script checks that the curated NDC evidence records exist and verifies six required evidence markers:
-
-1. 263,000 tonnes of maize production losses associated with the 2016 fall armyworm outbreak.
-2. 1,500 elephant deaths in Gonarezhou during the 1991/92 drought.
-3. Annual crop losses of US$126 million.
-4. More than 3,000 cattle deaths associated with tick-borne disease during the 2017/18 period.
-5. AFOLU's 54% contribution to greenhouse gas emissions in 2017.
-6. A 40% mitigation target.
-
-These checks help ensure that important climate evidence is available before the knowledge base is constructed.
-
-### B. Normalised climate projection table
-
-The script also extracts and verifies the relevant page of the climate risk profile and adds a normalised version of Table 3 to the knowledge base.
-
-The table contains projected median percentage changes in annual precipitation compared with the 1986–2005 baseline.
-
-| Period | RCP2.6 | RCP4.5 | RCP6.0 | RCP8.5 |
-|---|---:|---:|---:|---:|
-| 2040–2059 | -1.2% | +1.2% | +4.4% | -4.4% |
-| 2080–2099 | +2.8% | +4.1% | +3.0% | -10.7% |
-
-These values are climate projections, not observed rainfall measurements or changes expressed in millimetres.
-
-The normalised table improves retrieval of structured climate projection information.
+The script also processes a normalised climate projection table from the climate risk profile. The table records projected median percentage changes in annual precipitation relative to the 1986–2005 baseline. These are climate projections, not observed rainfall measurements.
 
 ## 5.5 Text Chunking
 
-After extraction, the documents are divided into smaller text sections known as chunks.
+After extraction, the text is divided into smaller sections called chunks using LangChain's `RecursiveCharacterTextSplitter`.
 
-The implementation uses LangChain's `RecursiveCharacterTextSplitter`.
-
-The configured parameters are:
+The recorded configuration is:
 
 | Parameter | Value |
 |---|---:|
@@ -291,294 +286,213 @@ The configured parameters are:
 | Chunk overlap | 180 characters |
 | Start index | Enabled |
 
-The splitter uses the following separator order:
-
-1. Paragraph breaks.
-2. Line breaks.
-3. Sentence boundaries.
-4. Spaces.
-5. Individual characters, where necessary.
-
-The overlap helps preserve context between adjacent chunks and reduces the likelihood of important information being separated at chunk boundaries.
-
-The starting character position is also retained as metadata.
+The splitter prioritises paragraph breaks, line breaks, sentence boundaries and spaces before splitting at individual characters where necessary. Overlap helps preserve context between adjacent chunks. The starting character position is retained as metadata.
 
 ## 5.6 Embedding Generation
 
-After chunking, each text section is converted into a numerical vector representation.
+Each text chunk is converted into a numerical vector representation.
 
-The implementation uses Ollama's `nomic-embed-text` embedding model through LangChain's `OllamaEmbeddings` integration.
+Two embedding configurations were used during the project's development:
 
-Embeddings represent the semantic content of text and allow the system to identify documents that are conceptually related to a user's question.
+| Implementation | Embedding model | Integration |
+|---|---|---|
+| Original local implementation | `nomic-embed-text` | Ollama / LangChain |
+| Deployed implementation | `models/gemini-embedding-001` | Gemini API / LangChain Google GenAI |
+
+The same embedding configuration must be used when constructing and querying a given FAISS index. Changing the embedding model requires rebuilding the index so that document vectors and query vectors are compatible.
 
 ## 5.7 FAISS Vector Database
 
-The generated embeddings are stored in a local FAISS vector index.
+FAISS stores the generated vectors and supports similarity-based retrieval. The deployed Gemini index is stored at:
 
-FAISS supports similarity-based retrieval by identifying document vectors that are closest to the embedding of a user's query.
-
-The index is saved at:
-
-`part02_genai/data/faiss_index/`
-
-The script uses LangChain's FAISS vector-store integration to construct and save the index.
-
-The index can subsequently be loaded by the research assistant without repeating the full document-processing procedure, provided the saved index is available and the embedding configuration remains compatible.
-
----
-
-## 5.8 Knowledge Base Construction Procedure
-
-To rebuild the knowledge base:
-
-**Step 1: Open Command Prompt and navigate to the project root.**
-
-```cmd
-cd "%USERPROFILE%\Desktop\ROSE-TADIWA\MACROEDTECH\WEEK5_8Task\zimbabwe-weather-intelligence"
+```text
+part02_genai/data/faiss_index_gemini/
 ```
 
-**Step 2: Activate the Part 2 virtual environment.**
+The directory contains the FAISS index and its associated metadata/pickle file, including `index.faiss` and `index.pkl`.
 
-```cmd
-part02_genai\venv\Scripts\activate
-```
+The index can be loaded by the research assistant without repeating document processing, provided the index exists and the embedding configuration is compatible.
 
-**Step 3: Execute the knowledge-base construction script.**
+The original Ollama implementation used a separate index location/configuration. Keep the indexes distinct.
+
+## 5.8 Rebuilding the Knowledge Base
+
+From the repository root, activate the Part 2 environment and execute:
 
 ```cmd
 python part02_genai\src\build_knowledge_base.py
 ```
 
-**Step 4: Review the execution output.**
+For the deployed Gemini configuration, ensure that the Gemini API key is available to the process before running the build. Review the script output to confirm document loading, evidence checks, chunk generation, embedding generation, FAISS index creation and retrieval tests.
 
-The script reports document-loading results, verification checks, chunk generation, embedding generation, FAISS index creation and retrieval smoke-test results.
+Rebuild the index after adding or modifying source documents. Do not use an index generated by a different embedding model.
 
-The index is saved locally for subsequent use by the assistant.
+## 5.9 Recorded Knowledge-Base Build Results
 
-## 5.9 Knowledge Base Build Results
+The recorded successful build produced:
 
-The knowledge-base construction script was executed successfully.
-
-The recorded results were:
-
-| Validation item | Result |
-|---|---|
+| Validation item | Recorded result |
+|---|---:|
 | Source records loaded | 103 |
 | PDF text pages extracted | 84 |
-| Normalised climate projection table | Successfully added |
 | Page-labelled NDC evidence records | 18 verified |
 | Text chunks generated | 217 |
-| Embedding model | nomic-embed-text |
 | FAISS index | Successfully generated and saved |
 | Retrieval smoke tests | 5 out of 5 passed |
 
-The five retrieval smoke tests successfully located expected evidence relating to:
+The five retrieval checks covered evidence relating to the fall armyworm outbreak, the 1991/92 drought, livestock disease, annual crop losses and AFOLU emissions in 2017.
 
-1. The 2016 fall armyworm outbreak and maize production losses.
-2. Elephant deaths during the 1991/92 drought.
-3. Livestock disease during the 2015/16 drought.
-4. Zimbabwe's annual crop losses.
-5. The AFOLU contribution to greenhouse gas emissions in 2017.
-
-The generated index was saved in:
-
-`part02_genai/data/faiss_index/`
-
-These results confirm that document loading, extraction, preprocessing, chunking, embedding generation and vector-index construction executed successfully.
-
-The five retrieval checks also confirmed that the expected evidence could be found among the retrieved documents.
+These results document a successful build and selected retrieval checks. They do not represent a comprehensive evaluation of all possible research questions or generated answers. The model and embedding configuration should be recorded alongside the index used for each build.
 
 ---
 
-# 6. RETRIEVAL-AUGMENTED GENERATION (RAG)
+# 6. RETRIEVAL-AUGMENTED GENERATION
 
 ## 6.1 Overview
 
-Retrieval-Augmented Generation is used to provide the language model with relevant information retrieved from the project's local knowledge base.
+Retrieval-Augmented Generation combines information retrieval with language-model response generation. The system retrieves relevant passages from the local knowledge base and uses them as contextual evidence when responding to document-based questions.
 
-Rather than relying entirely on information learned during model training, the system retrieves relevant document sections and uses them as contextual evidence when generating answers.
-
-This approach is particularly important for questions concerning Zimbabwe-specific climate events, national climate statistics and agricultural impacts.
+This is particularly useful for Zimbabwe-specific climate events, national climate statistics, agricultural impacts and policy evidence.
 
 ## 6.2 RAG Processing Workflow
 
-The RAG process follows these steps:
-
-1. A user submits a climate or weather research question.
-2. The question is converted into an embedding using the configured embedding model.
-3. FAISS performs a similarity search against the stored document vectors.
-4. The most relevant document chunks are retrieved.
-5. Retrieved text is passed to the response-generation workflow.
-6. The language model uses the retrieved information to formulate an answer.
-7. The response is returned to the user.
+1. The user submits a research question.
+2. The question is embedded using the configured embedding model.
+3. FAISS performs similarity search against the stored document vectors.
+4. Relevant document chunks are retrieved.
+5. The retrieved text and metadata are passed to the response workflow.
+6. The configured response process generates or formats an answer.
+7. The response is displayed to the user.
 
 ## 6.3 Semantic Search
 
-Semantic search allows the system to retrieve information based on meaning rather than relying only on exact keyword matches.
+Semantic search retrieves information based on meaning rather than exact keyword matches. For example, a question about drought effects on agriculture may retrieve material discussing crop losses, livestock disease, rainfall reduction and agricultural vulnerability even where the wording differs.
 
-For example, a question about the effects of drought on agriculture may retrieve documents discussing crop losses, livestock disease, reduced rainfall and agricultural vulnerability, even when the exact wording differs.
-
-The knowledge-base construction script performs focused retrieval checks using `similarity_search()` and retrieves the top five matching documents for each test query.
+The knowledge-base build includes focused retrieval smoke tests using similarity search and the top matching documents.
 
 ## 6.4 Contextual Response Generation
 
-For general document research questions, the integrated assistant uses the retrieved information as context for a language-model response.
+For general document-research questions, the integrated assistant uses retrieved information as context for a language-model response. The response workflow includes instructions to ground answers in retrieved evidence. The implementation also includes a second-pass evidence-auditing process and citation normalisation.
 
-The implementation includes a grounded-response prompt that instructs the model to base its answers on the available evidence.
-
-A second-pass evidence-auditing process is also used to review generated research responses, followed by citation normalisation.
-
-This helps improve the reliability and traceability of research answers.
+These mechanisms are intended to improve traceability and reduce unsupported claims; they do not guarantee that every generated answer is correct.
 
 ## 6.5 Specialised Research Responses
 
-Selected research topics use dedicated response-processing functions rather than relying entirely on unrestricted language-model generation.
-
-These include:
+Selected topics use dedicated response-processing functions rather than relying entirely on unrestricted language-model generation. The documented topics include:
 
 - Historical drought impacts.
 - Agricultural challenges.
 - AFOLU and greenhouse gas emissions.
 - Annual precipitation projections.
 
-For drought and agricultural questions, the system retrieves relevant evidence and uses a deterministic response formatter to organise the findings under headings such as:
-
-- Long-term Agricultural Trends.
-- Documented Historical Impacts.
-- Future Projections.
-- Agricultural Vulnerability.
-
-The AFOLU workflow also uses retrieved evidence to provide a structured response about emissions and land-use-related activities.
-
-The precipitation projection workflow uses the normalised climate table to present the relevant projection values.
-
-This specialised handling helps reduce unsupported claims and improves consistency for selected research questions.
+For selected drought and agricultural questions, retrieved evidence is organised into structured sections such as long-term trends, documented historical impacts, future projections and agricultural vulnerability. The AFOLU workflow structures evidence about emissions and land-use activities. The precipitation workflow uses the normalised projection table.
 
 ## 6.6 Source Traceability
 
-Retrieved document chunks retain their source metadata.
-
-Where available, this includes the original filename, PDF page number, printed-page reference and other relevant document identifiers.
-
-These details support the identification of the underlying evidence used in a response.
+Retrieved chunks retain source metadata, including the original filename and page references where available. This supports identification of the source material behind retrieved evidence. Users should consult the original documents when using findings in formal research or decision-making.
 
 ---
 
-# 7. LARGE LANGUAGE MODEL INTEGRATION
+# 7. LANGUAGE MODEL INTEGRATION
 
-## 7.1 Ollama
+## 7.1 Original Local Model Configuration
 
-Ollama is used to run the language and embedding models locally.
-
-This enables the application to access its AI capabilities without depending on a remotely hosted commercial LLM service.
-
-Two models are used:
+The first implementation used Ollama to run the language and embedding models on the developer's computer.
 
 | Model | Purpose |
 |---|---|
 | `llama3.2:3b` | Natural-language response generation |
 | `nomic-embed-text` | Text embedding generation |
 
-## 7.2 Llama 3.2:3b
+The language model was accessed through LangChain's Ollama integration. The embedding model converted document chunks and user questions into vectors for FAISS.
 
-The Llama 3.2:3b model is used for generating natural-language responses in the research and conversational workflows.
-
-It is accessed through LangChain's `ChatOllama` integration.
-
-The model is used to:
-
-- Interpret user questions.
-- Generate contextual responses.
-- Support document-based research.
-- Participate in AI agent workflows.
-
-## 7.3 Embedding Model
-
-The `nomic-embed-text` model converts document chunks and user questions into vector representations.
-
-The same embedding model configuration is used when constructing and querying the FAISS index.
-
-This ensures compatibility between stored document embeddings and query embeddings.
-
-## 7.4 Model Availability
-
-Before running the application, ensure that Ollama is installed and that both required models are available locally.
-
-The models can be obtained using:
+To prepare a local Ollama environment, the required models can be downloaded using:
 
 ```cmd
 ollama pull llama3.2:3b
 ollama pull nomic-embed-text
 ```
 
-To confirm the installed models:
+To list locally available models:
 
 ```cmd
 ollama list
 ```
 
+This describes the original local implementation. These commands are not prerequisites for the deployed Gemini version.
+
+## 7.2 Deployed Gemini Configuration
+
+The deployed application uses the Gemini API for language generation and embeddings.
+
+| Component | Configured model |
+|---|---|
+| Chat model | `gemini-3.8-flash` |
+| Embedding model | `models/gemini-embedding-001` |
+
+The corresponding LangChain Google GenAI integration is included in the Part 2 dependencies.
+
+The Gemini API key is read from Streamlit secrets under the key `GEMINI_API_KEY`. The application makes the value available to the Google/Gemini environment variables required by the integration.
+
+The key must be kept private. Do not paste it into source code, commit it to GitHub or include it in this manual.
+
+## 7.3 Why the Model Configuration Changed
+
+The original Ollama version was suitable for local development and testing. However, deploying Ollama together with the Streamlit application would require a hosting environment with enough storage for the model files and sufficient memory and compute capacity to run them. Those additional infrastructure requirements could increase hosting costs and make deployment and maintenance more demanding.
+
+The application was therefore adapted to use the Gemini API and deployed on Streamlit Community Cloud. Gemini handles the model workloads through a hosted API, so the project does not need to host the Ollama models itself. This also allows a supervisor or reviewer to access the application through a browser without installing Ollama or downloading models.
+
+This was a practical decision about deployment resources, cost and accessibility; it was not a replacement of the original local work. The Ollama-based implementation and its code have been retained for local use. The deployed Gemini version does, however, depend on internet connectivity, API credentials and the provider's quota and pricing arrangements.
+
+## 7.4 Configuration Compatibility
+
+The Ollama and Gemini versions use different embedding models. A FAISS index built with `nomic-embed-text` must not be assumed to work with `models/gemini-embedding-001`. Rebuild the index with the intended embedding model when changing implementation configurations.
+
 ---
 
 # 8. AI AGENTS AND WORKFLOW ORCHESTRATION
 
-## 8.1 AI Agent Implementation
+## 8.1 Integrated Assistant
 
-The project uses LangChain to create an AI agent that can interact with available tools.
+The integrated conversational workflow is implemented in:
 
-The agent can interpret user requests, determine which tools are relevant and use the available functionality to respond.
+```text
+part02_genai/src/integrated_weather_assistant.py
+```
 
-The integrated assistant is implemented in:
-
-`part02_genai/src/integrated_weather_assistant.py`
+It uses LangChain and LangGraph to coordinate language-model interaction, knowledge retrieval and selected tools.
 
 ## 8.2 LangChain
 
-LangChain provides the integration between the language model, retrieval functions and external tools.
+LangChain provides model, retrieval and tool integration. The research tool `search_weather_knowledge` gives the assistant access to the local FAISS knowledge base.
 
-It is used for:
-
-- Connecting to Ollama models.
-- Loading the FAISS knowledge base.
-- Defining the document-research tool.
-- Connecting to MCP tools.
-- Creating the AI agent.
-
-A research tool named `search_weather_knowledge` is defined to allow the assistant to access the local weather and climate knowledge base.
+The deployed Gemini configuration uses the Google GenAI integration. The retained local configuration uses the relevant Ollama integration.
 
 ## 8.3 LangGraph
 
-LangGraph is used to organise the agent's execution workflow.
+LangGraph organises the agent execution workflow. The integrated assistant defines stages for agent execution and response validation. The graph coordinates the workflow and returns the resulting response.
 
-The integrated assistant defines a graph containing two main stages:
+## 8.4 Tool Availability and Prediction Handling
 
-1. **Agent execution:** The agent processes the user's messages and invokes relevant tools.
-2. **Response validation:** The resulting response is passed through a validation stage before the workflow ends.
+The integrated assistant's general tool list includes the research tool and selected MCP tools, such as API health and supported-city retrieval.
 
-The graph uses an asynchronous agent invocation and is responsible for coordinating the execution of these stages.
-
-## 8.4 Tool Selection
-
-The agent has access to selected MCP tools and the document-research tool.
-
-The `predict_temperature` tool is excluded from the general LangChain agent tool list because prediction requests are handled through a dedicated Python-controlled MCP workflow.
-
-This separation provides more control over the prediction input and response handling.
+The `predict_temperature` tool is implemented by the MCP server but is excluded from the general LangChain agent tool list. Temperature prediction is handled through a separate Python-controlled MCP workflow. This distinction is important: the existence of a server-side MCP tool does not mean the general conversational agent can freely select it as one of its tools.
 
 ---
 
-# 9. MODEL CONTEXT PROTOCOL (MCP) INTEGRATION
+# 9. MODEL CONTEXT PROTOCOL INTEGRATION
 
 ## 9.1 Overview
 
-The Model Context Protocol (MCP) provides a standardised way for AI applications to interact with external tools and services.
+The Model Context Protocol provides a standardised interface through which an application can interact with tools and external services.
 
-In this project, MCP connects the Generative AI assistant to the existing Part 1 weather prediction API.
+The Part 2 MCP server connects to the Part 1 prediction API. It is implemented in:
 
-The MCP server is implemented in:
+```text
+part02_genai/src/weather_mcp_server.py
+```
 
-`part02_genai/src/weather_mcp_server.py`
-
-The implementation uses FastMCP and communicates with the assistant through standard input/output (stdio) transport.
+The server uses FastMCP and runs with standard input/output (stdio) transport.
 
 ## 9.2 MCP Tools
 
@@ -586,59 +500,60 @@ The MCP server exposes three tools:
 
 | Tool | Function |
 |---|---|
-| `get_weather_api_health` | Checks the availability and health of the prediction API |
-| `get_available_cities` | Retrieves the supported prediction cities |
-| `predict_temperature` | Sends prediction inputs to the Part 1 API and returns the forecast |
+| `get_weather_api_health` | Checks the prediction API health endpoint |
+| `get_available_cities` | Retrieves the cities supported by the prediction service |
+| `predict_temperature` | Sends prediction inputs to the Part 1 API and returns its response |
 
-The tools communicate with the FastAPI service through HTTP requests.
+## 9.3 Part 1 API Integration
 
-## 9.3 API Integration
+The MCP server communicates with:
 
-The MCP server connects to the deployed Part 1 prediction API:
+```text
+https://zimbabwe-weather-intelligence-macroedtech.onrender.com
+```
 
-`https://zimbabwe-weather-intelligence-macroedtech.onrender.com`
-
-The relevant endpoints include:
+Relevant API endpoints include:
 
 | Endpoint | Method | Purpose |
 |---|---|---|
-| `/` | GET | API root |
 | `/health` | GET | API health check |
 | `/cities` | GET | Retrieves supported cities |
 | `/predict` | POST | Generates a temperature prediction |
 | `/docs` | GET | API documentation |
 
-The supported cities are:
+Supported cities:
 
 - Harare
 - Bulawayo
 - Mutare
 - Gweru
 
-## 9.4 Prediction Tool Workflow
+## 9.4 MCP Prediction Workflow
 
-When the integrated assistant needs to access prediction functionality:
+When the Python-controlled prediction workflow invokes the MCP prediction tool:
 
-1. The assistant identifies the need for a temperature prediction.
-2. The Python-controlled MCP client starts a connection to the MCP server.
+1. The workflow prepares the prediction input.
+2. The MCP client connects to the MCP server.
 3. A client session is established.
 4. The `predict_temperature` tool is called with the required input.
-5. The MCP server sends the request to the FastAPI `/predict` endpoint.
-6. The prediction API processes the input using the XGBoost model.
-7. The prediction result is returned through MCP.
-8. The assistant presents the result to the user.
+5. The MCP server sends an HTTP request to the FastAPI `/predict` endpoint.
+6. The Part 1 service processes the input using the XGBoost model.
+7. The result is returned through MCP.
+8. The application formats and presents the prediction.
 
-## 9.5 MCP Integration Testing
+The Streamlit Temperature Prediction interface also calls the FastAPI endpoint directly; that route is separate from the MCP workflow.
 
-The MCP integration was tested using the available tools.
+## 9.5 Request Handling and Retry Behaviour
 
-The city retrieval function returned the supported cities, while the health-check function confirmed that the prediction API was operational.
+The MCP server uses an HTTP request helper with a configured maximum of three attempts and a request timeout of 90 seconds. It retries timeout and connection errors, waiting 10 seconds after the first failed attempt and 20 seconds after the second. Other HTTP errors are raised rather than treated as retryable connection failures.
 
-The temperature prediction tool was also successfully executed and returned a one-hour-ahead forecast with model information.
+This retry logic helps handle temporary connection problems and Render cold starts. It does not guarantee that the remote service will become available.
 
-The successful tool calls confirmed that the MCP server could communicate with the deployed prediction API.
+## 9.6 MCP Testing
 
-The prediction test used supplied weather input values and was intended to verify integration functionality. It should not be interpreted as a complete assessment of real-world forecast accuracy.
+The recorded tests exercised API health retrieval, supported-city retrieval and the temperature-prediction tool. Successful calls confirmed communication between the MCP server and the deployed prediction API at the time of testing.
+
+A later model-provider quota error during an agent test should be distinguished from an MCP transport failure. Gemini request quota exhaustion can prevent a language-model response even where the MCP server and API are otherwise functioning.
 
 ---
 
@@ -646,234 +561,250 @@ The prediction test used supplied weather input values and was intended to verif
 
 ## 10.1 Overview
 
-Conversation memory allows the assistant to retain recent messages during an interaction.
-
-This helps maintain context when users ask follow-up questions without repeating all the details from earlier messages.
+Conversation memory allows the assistant to retain recent messages so that follow-up questions can be interpreted in the context of the active interaction.
 
 ## 10.2 Implementation
 
-The application maintains conversation history using Streamlit session state.
+The Streamlit application maintains conversation history using session state. The configured limit is ten messages, equivalent to approximately five user-assistant exchanges.
 
-The conversation history is limited to the most recent ten messages, equivalent to approximately five user-assistant exchanges.
+The recent history is passed to the relevant assistant workflow when processing subsequent questions.
 
-The history is passed into the relevant assistant workflow so that subsequent questions can be interpreted in context.
+## 10.3 Scope and Limitations
 
-## 10.3 Purpose
-
-Conversation memory supports:
-
-- Follow-up questions.
-- Contextual responses.
-- Continuity across a sequence of related questions.
-- Reduced repetition by the user.
-
-The memory is session-based and is not implemented as permanent storage of conversations across separate application sessions.
+The memory supports follow-up questions and continuity within the active session. It is session-based and is not permanent storage of conversations across separate application sessions.
 
 ---
 
 # 11. STREAMLIT USER INTERFACE
 
-## 11.1 Overview
+## 11.1 Main Application
 
-Streamlit provides the interactive interface through which users access the weather prediction and climate research capabilities.
+The Part 2 Streamlit application is implemented in:
 
-The main application is implemented in:
+```text
+part02_genai/src/weather_assistant_ui.py
+```
 
-`part02_genai/src/weather_assistant_ui.py`
+It is the configured main file for the Part 2 Streamlit Community Cloud deployment.
 
-The interface brings together the existing prediction service and the Generative AI research assistant.
+## 11.2 Main Interface Areas
 
-## 11.2 Main Application Features
+The application provides the following areas:
 
-The application provides two main functional areas:
+### A. Research Assistant
 
-### A. Temperature Prediction
+Users can submit natural-language questions relating to weather, climate and environmental topics. The research workflow retrieves information from the knowledge base and uses the configured response process.
 
-The Temperature Prediction section allows users to:
+Documented areas of use include historical drought impacts, agricultural impacts, AFOLU and emissions, and annual precipitation projections.
 
-- Select a supported Zimbabwean city.
-- Provide the required weather input variables.
-- Submit a prediction request.
-- View the predicted temperature and relevant model information.
+### B. Temperature Prediction
 
-The Streamlit prediction interface communicates directly with the FastAPI `/predict` endpoint using Python's `requests` library.
+Users can select a supported city, provide the required weather input variables, submit a request and view the predicted temperature and associated model information.
 
-This is separate from the MCP prediction workflow used by the integrated conversational assistant.
+The Streamlit prediction interface communicates directly with the FastAPI `/predict` endpoint using Python's HTTP request functionality. This is separate from the MCP prediction workflow.
 
-### B. Weather and Climate Research Assistant
+### C. About
 
-The research assistant allows users to submit natural-language questions relating to weather, climate and environmental conditions.
+The interface includes an About area providing information about the application.
 
-It supports:
+## 11.3 Session Handling and Caching
 
-- General weather-related questions.
-- Document-based climate research.
-- Historical drought and agricultural impact questions.
-- AFOLU and emissions-related questions.
-- Annual precipitation projection questions.
-- Contextual follow-up questions.
-
-The assistant retrieves information from the local knowledge base and uses the appropriate response workflow.
-
-## 11.3 Application Session Handling
-
-The Streamlit application uses session state to maintain recent conversation history.
-
-The history is limited to ten messages.
-
-The application also uses caching for selected research resources and agent-related components to reduce unnecessary reloading during normal use.
+Streamlit session state maintains recent conversation history. The application also uses caching for selected research resources and agent-related components to reduce unnecessary reloading during normal use.
 
 ---
 
 # 12. CONFIGURATION AND APPLICATION EXECUTION
 
-## 12.1 Prerequisites
-
-Before running Part 2, ensure that the following are available:
+## 12.1 Prerequisites for the Deployed Gemini Configuration
 
 - Python 3.12.
 - Git.
-- Ollama.
-- Llama 3.2:3b.
-- nomic-embed-text.
-- The project source code and required documents.
-- The Part 2 Python dependencies.
+- Project source code and required documents.
+- Part 2 dependencies.
+- A Gemini API key available through Streamlit secrets or the local environment.
+- Internet access to reach Gemini and the Part 1 prediction API.
 
-## 12.2 Virtual Environment
+Ollama is not required to run the deployed Gemini configuration.
 
-The project uses a Python virtual environment to isolate its dependencies.
-
-Navigate to the project root:
+## 12.2 Clone the Repository
 
 ```cmd
-cd "%USERPROFILE%\Desktop\ROSE-TADIWA\MACROEDTECH\WEEK5_8Task\zimbabwe-weather-intelligence"
+git clone https://github.com/roseTadiwa/zimbabwe-weather-intelligence-MACROEDTECH.git
+cd zimbabwe-weather-intelligence-MACROEDTECH
 ```
 
-Activate the virtual environment:
+## 12.3 Create and Activate the Virtual Environment
 
 ```cmd
+python -m venv part02_genai\venv
 part02_genai\venv\Scripts\activate
 ```
 
-## 12.3 Dependency Installation
-
-If setting up the environment for the first time, install the dependencies listed in the Part 2 requirements file:
+## 12.4 Install Dependencies
 
 ```cmd
 pip install -r part02_genai\requirements.txt
 ```
 
-Ensure Ollama is installed and the required models have been pulled before starting the application.
+The `part02_genai/src/requirements.txt` copy is maintained for Streamlit Community Cloud dependency installation.
 
-## 12.4 Rebuilding the Knowledge Base
+## 12.5 Configure the Gemini API Key Locally
 
-If source documents are added or updated, rebuild the knowledge base:
+For local Streamlit execution, the key can be configured in a local `.streamlit/secrets.toml` file:
+
+```toml
+GEMINI_API_KEY = "your-key"
+```
+
+Do not commit this file. The actual key must remain private. In Streamlit Community Cloud, configure the same secret name in the application's Secrets settings.
+
+The application includes a secrets bridge that reads `GEMINI_API_KEY` from `st.secrets` and makes it available to the environment variables used by the Gemini integration.
+
+## 12.6 Build the Knowledge Base
 
 ```cmd
 python part02_genai\src\build_knowledge_base.py
 ```
 
-Review the output and ensure the FAISS index is generated successfully before using the research assistant.
+Use the Gemini key and Gemini embedding configuration for the deployed index. Confirm the expected Gemini FAISS index is generated before launching the research assistant.
 
-## 12.5 Running the Streamlit Application
-
-From the project root, with the virtual environment activated, execute:
+## 12.7 Run the Streamlit Application Locally
 
 ```cmd
-streamlit run part02_genai\src\weather_assistant_ui.py
+python -m streamlit run part02_genai\src\weather_assistant_ui.py
 ```
 
-Streamlit will start the local application and provide a browser address for accessing the interface.
+The application will display a local browser address. The Gemini configuration requires the API key, network access and the compatible FAISS index.
 
-The application requires the saved knowledge base and an available Ollama service.
+The `python -m streamlit` form is used in the Windows environment because direct execution of `streamlit.exe` may be blocked by local Device Guard/security restrictions.
 
-## 12.6 Running the Integrated CLI Assistant
+## 12.8 Original Ollama Local Configuration
 
-The integrated conversational assistant can also be executed separately using:
+The original local implementation requires Ollama and its model files:
+
+```cmd
+ollama pull llama3.2:3b
+ollama pull nomic-embed-text
+ollama list
+```
+
+Run the corresponding retained Ollama implementation with its own configuration and compatible FAISS index. Do not assume the current Gemini-based code and index can be switched to Ollama simply by installing the Ollama models; the model integrations, embedding configuration and index must match.
+
+## 12.9 Running the Integrated Assistant Separately
+
+The integrated assistant source file is:
+
+```text
+part02_genai/src/integrated_weather_assistant.py
+```
+
+It can be run separately for command-line or integration testing where its configured dependencies, credentials, knowledge base and MCP server requirements are available:
 
 ```cmd
 python part02_genai\src\integrated_weather_assistant.py
 ```
 
-This provides a command-line interface for testing the integrated agent, research tool and MCP functionality.
+The primary reviewer-facing interface is the Streamlit application. The standalone assistant script should be treated as a development/testing entry point, not as the deployed web interface.
 
 ---
 
-# 13. TESTING AND EVALUATION
+# 13. DEPLOYMENT
 
-## 13.1 Testing Objectives
+## 13.1 Part 2 Streamlit Community Cloud
 
-Testing was conducted to assess whether the main system components operate as intended.
+The Part 2 application was deployed separately to Streamlit Community Cloud.
 
-The testing activities focused on:
+Configured main file:
+
+```text
+part02_genai/src/weather_assistant_ui.py
+```
+
+The Gemini API key is stored in Streamlit Cloud Secrets under:
+
+```text
+GEMINI_API_KEY
+```
+
+The secret is read at runtime and is not intended to be committed to the repository.
+
+The public Part 2 application URL should be recorded in the project README or deployment record once confirmed. Do not substitute the Part 1 application URL.
+
+## 13.2 Dependency File Placement
+
+The project maintains:
+
+```text
+part02_genai/requirements.txt
+part02_genai/src/requirements.txt
+```
+
+The second file is a copy used to ensure Streamlit Community Cloud detects the dependencies when the main application file is inside `src/`.
+
+## 13.3 Part 1 API Hosting
+
+The Part 1 FastAPI prediction service is hosted at:
+
+```text
+https://zimbabwe-weather-intelligence-macroedtech.onrender.com
+```
+
+It is separate from the Part 2 Streamlit deployment. The Render free-tier service may sleep after inactivity and can therefore delay the first request.
+
+---
+
+# 14. TESTING AND EVALUATION
+
+## 14.1 Testing Objectives
+
+Testing activities focused on:
 
 - Document loading and extraction.
 - Knowledge-base construction.
+- NDC evidence verification.
+- Chunking and embedding generation.
+- FAISS index creation.
 - Semantic retrieval.
-- Climate research response workflows.
+- Specialised and general research responses.
 - Prediction API connectivity.
 - MCP tool integration.
-- Streamlit application functionality.
-- Conversation context handling.
+- Streamlit interface functionality.
+- Conversation-history handling.
+- Deployment access and operation.
 
-## 13.2 Knowledge Base Testing
+## 14.2 Knowledge-Base Testing
 
-The knowledge-base construction script includes five focused retrieval smoke tests.
+The knowledge-base construction script includes five focused retrieval smoke tests. All five recorded tests passed. They checked whether expected evidence could be retrieved for selected NDC-related questions.
 
-All five tests passed.
+These tests validate retrieval presence for the selected queries, not the factual correctness of every final answer.
 
-The tests confirmed that expected evidence could be retrieved for the selected NDC-related research questions.
+## 14.3 Research Response Testing
 
-These checks validate retrieval presence, rather than the factual correctness of every final answer generated by the language model.
+Specialised research workflows were tested with questions relating to agricultural challenges, the 1991/92 drought, water availability and future projections, and AFOLU's contribution to greenhouse gas emissions.
 
-## 13.3 Research Response Testing
+The specialised response functions returned expected evidence for the tested questions. The general document-research workflow requires continued evaluation because generated responses may occasionally be incomplete or inaccurate.
 
-Specialised research workflows were tested using questions relating to:
+## 14.4 Prediction API Testing
 
-- Agricultural challenges and historical maize production trends.
-- The impacts of the 1991/92 drought.
-- Water availability and future projections.
-- AFOLU's contribution to greenhouse gas emissions.
+The deployed FastAPI service was tested through its health, supported-city and prediction endpoints. The Streamlit Temperature Prediction interface was also tested against the deployed API.
 
-The specialised response functions successfully returned the expected evidence for the tested questions.
+## 14.5 MCP Testing
 
-The general document-research workflow still requires continued evaluation to identify and reduce occasional inaccuracies, unsupported interpretations and inconsistencies in generated responses.
+The MCP health-check and city-retrieval tools were tested. The `predict_temperature` tool was also successfully executed in recorded integration testing and returned a one-hour-ahead prediction.
 
-## 13.4 Prediction API Testing
+A later Gemini free-tier quota-exhaustion error during an agent interaction is a model-provider limitation. It does not, on its own, demonstrate that MCP transport or the prediction API is broken.
 
-The deployed FastAPI service was tested through its available endpoints.
+## 14.6 Streamlit Application Testing
 
-The API health check, supported-city retrieval and prediction functionality were exercised.
+The local Streamlit application was launched and tested. The deployed Streamlit application was also made available through Streamlit Community Cloud. The research assistant and direct temperature-prediction interface were tested in the deployed environment.
 
-The Streamlit prediction interface also uses the deployed API directly.
+## 14.7 Conversation Memory Testing
 
-## 13.5 MCP Testing
+The application maintains recent conversation messages through Streamlit session state. The configured history limit is ten messages, equivalent to approximately five user-assistant exchanges.
 
-The MCP server was tested to confirm that the assistant could access the available API tools.
+## 14.8 Testing Summary
 
-The following functionality was successfully tested:
-
-- API health retrieval.
-- Supported-city retrieval.
-- Temperature prediction through the MCP prediction tool.
-
-## 13.6 Application Testing
-
-The Streamlit application was launched to verify that the user interface and its main functional areas were accessible.
-
-The application supports both direct API-based temperature prediction and document-based climate research.
-
-## 13.7 Conversation Memory Testing
-
-The application retains recent conversation messages through Streamlit session state.
-
-The configured history limit is ten messages, equivalent to approximately five exchanges.
-
-This supports contextual follow-up interactions within the active session.
-
-## 13.8 Testing Summary
-
-| Component | Testing outcome |
+| Component | Recorded outcome |
 |---|---|
 | Document extraction | Successful |
 | NDC evidence verification | Successful |
@@ -883,177 +814,174 @@ This supports contextual follow-up interactions within the active session.
 | Retrieval smoke tests | 5/5 passed |
 | Specialised climate research | Tested successfully |
 | General document research | Requires further refinement |
-| Prediction API integration | Tested successfully |
+| Part 1 prediction API integration | Tested successfully |
 | MCP health and city tools | Tested successfully |
-| MCP prediction tool | Tested successfully |
-| Streamlit interface | Launched and tested |
-| Conversation history implementation | Implemented |
+| MCP prediction tool | Tested successfully in recorded integration testing |
+| Local Streamlit interface | Launched and tested |
+| Deployed Streamlit interface | Deployed and tested |
+| Conversation history | Implemented |
 
 ---
 
-# 14. TROUBLESHOOTING
+# 15. TROUBLESHOOTING
 
-The following issues may occur during setup or application execution.
+## 15.1 Gemini API Key Not Found
 
-## 14.1 Ollama Model Not Found
+**Possible cause:** The `GEMINI_API_KEY` secret is missing, incorrectly named or unavailable to the running application.
 
-**Possible cause:** The required model has not been downloaded or is not available locally.
+**Resolution:**
+
+1. Confirm that the secret is configured in Streamlit Community Cloud Secrets or local Streamlit secrets.
+2. Confirm that the name is exactly `GEMINI_API_KEY`.
+3. Restart or rerun the application after correcting the secret.
+4. Do not print or share the secret value when debugging.
+
+## 15.2 Gemini API Quota or Rate Limit Error
+
+**Possible cause:** The configured Gemini model has reached its request quota or rate limit.
+
+**Resolution:**
+
+1. Check the error details and quota reset information.
+2. Wait until the applicable quota becomes available or review the provider's available quota options.
+3. Avoid repeated test requests while the quota is exhausted.
+4. Distinguish a model-provider quota error from a local code, FAISS or MCP transport error.
+
+## 15.3 FAISS Index Not Found
+
+**Possible cause:** The knowledge base has not been built, the index files are missing, or the application is looking in a different directory.
+
+**Resolution:**
+
+```cmd
+python part02_genai\src\build_knowledge_base.py
+```
+
+Review the output and confirm that the index is saved in the expected directory. For the deployed Gemini configuration, the index path is:
+
+```text
+part02_genai/data/faiss_index_gemini/
+```
+
+## 15.4 Embedding Dimension or Compatibility Error
+
+**Possible cause:** The FAISS index was built with a different embedding model from the one currently used to embed queries.
+
+**Resolution:** Rebuild the index using the embedding model configured for the application. Do not mix the Ollama `nomic-embed-text` index with the Gemini `models/gemini-embedding-001` query configuration.
+
+## 15.5 Prediction API Connection Error
+
+**Possible cause:** The Render-hosted API is unavailable, starting from sleep or experiencing a connection delay.
+
+**Resolution:** Check:
+
+```text
+https://zimbabwe-weather-intelligence-macroedtech.onrender.com/health
+```
+
+If the service is starting or temporarily unavailable, retry after a short interval. The first request after inactivity may take longer.
+
+## 15.6 MCP Connection Error
+
+**Possible cause:** The MCP server did not start, dependencies are missing, or the client could not establish a session.
+
+**Resolution:**
+
+1. Confirm that `weather_mcp_server.py` exists.
+2. Confirm that the Part 2 dependencies are installed.
+3. Confirm that the Part 1 API is reachable.
+4. Review the terminal output for connection and execution errors.
+5. Retry after resolving any reported startup or connectivity problem.
+
+## 15.7 Ollama Model Not Found – Local Version Only
+
+**Possible cause:** The required local model has not been downloaded or Ollama is not running.
 
 **Resolution:**
 
 ```cmd
 ollama pull llama3.2:3b
 ollama pull nomic-embed-text
-```
-
-Confirm the available models:
-
-```cmd
 ollama list
 ```
 
-## 14.2 FAISS Index Not Found
+This troubleshooting step applies only to the retained local Ollama implementation. It is not required for the deployed Gemini version.
 
-**Possible cause:** The knowledge base has not been built, or the saved index is missing.
+## 15.8 Streamlit Application Error
 
-**Resolution:**
-
-From the project root, execute:
-
-```cmd
-python part02_genai\src\build_knowledge_base.py
-```
-
-Review the execution output to confirm that the index has been saved.
-
-## 14.3 Prediction API Connection Error
-
-**Possible cause:** The deployed API is unavailable, still starting, or experiencing a connection delay.
+**Possible causes:** Missing dependencies, unavailable knowledge base, missing Gemini secret, incompatible FAISS index or configuration error.
 
 **Resolution:**
 
-Check the API health endpoint:
+1. Confirm that the intended virtual environment is activated.
+2. Confirm that dependencies are installed from the Part 2 requirements file.
+3. Confirm that `GEMINI_API_KEY` is configured for the Gemini implementation.
+4. Confirm that the FAISS index exists and matches the configured embedding model.
+5. Confirm that the Part 1 API is reachable if testing prediction functionality.
+6. Review the application and terminal error messages.
 
-`https://zimbabwe-weather-intelligence-macroedtech.onrender.com/health`
+## 15.9 PDF Extraction Warnings
 
-If the service is unavailable, retry after some time.
-
-The application uses a free-tier hosted service, which may experience cold starts and response delays.
-
-## 14.4 MCP Connection Error
-
-**Possible cause:** The MCP server failed to start or the client could not establish a session.
-
-**Resolution:**
-
-Confirm that the MCP server script is available and that its dependencies are installed.
-
-Check the prediction API's availability and review the terminal output for connection or execution errors.
-
-## 14.5 PDF Extraction Warnings
-
-**Possible cause:** Some PDF documents contain embedded font encodings that require additional font parsing support.
-
-The knowledge-base build may display a warning indicating that `fontTools` is not installed.
-
-If text extraction works correctly, this warning does not necessarily prevent knowledge-base construction.
-
-If encoding problems are encountered, install the optional package:
-
-```cmd
-pip install fontTools
-```
-
-## 14.6 Streamlit Application Error
-
-**Possible cause:** Missing dependencies, an unavailable knowledge base, an inactive Ollama service or an application configuration issue.
-
-**Resolution:**
-
-1. Confirm that the virtual environment is activated.
-2. Confirm that the required dependencies are installed.
-3. Confirm that Ollama is running.
-4. Confirm that both required Ollama models are available.
-5. Confirm that the FAISS index exists.
-6. Review the terminal error message and address the reported issue.
+Some PDF files may produce font-parsing warnings. A warning does not necessarily prevent text extraction or index construction. If extraction or encoding problems occur, inspect the extracted text and install optional font parsing support if required by the error message.
 
 ---
 
-# 15. SYSTEM LIMITATIONS
+# 16. SYSTEM LIMITATIONS
 
-The following limitations should be considered when operating and evaluating the application.
+## 16.1 Knowledge-Base Coverage
 
-## 15.1 Knowledge Base Coverage
+The knowledge base relies on a limited collection of Zimbabwe-specific climate and weather documents. Its ability to answer questions is constrained by the scope, quality and availability of the source material.
 
-The knowledge base currently relies on a limited collection of Zimbabwe-specific climate and weather documents.
+## 16.2 Language Model Accuracy
 
-Its ability to answer questions is therefore influenced by the coverage, quality and availability of the source material.
+Language models can generate incomplete or inaccurate interpretations. Retrieval and evidence-grounding instructions reduce some risks but do not guarantee correctness. Research outputs should be checked against original sources, especially for formal reporting or decision-making.
 
-## 15.2 Language Model Accuracy
+## 16.3 Retrieval Limitations
 
-Although the system uses retrieval and evidence-grounding instructions, language models may occasionally produce inaccurate interpretations or unsupported statements.
+Retrieval quality depends on document extraction, chunking, embeddings and similarity ranking. Relevant information may not always appear in the retrieved results.
 
-Research responses should therefore be checked against the original source documents, particularly when used for formal reporting or decision-making.
+## 16.4 Gemini API Dependency
 
-## 15.3 Retrieval Limitations
+The deployed research assistant depends on the Gemini API, a valid API key, network connectivity and available request quota. API usage may be subject to free-tier limits or applicable charges. The deployment avoids the need to host Ollama model files and provide the associated server storage, memory and compute resources, but it is not independent of hosted model services.
 
-Semantic retrieval depends on the quality of the document chunks and their embeddings.
+## 16.5 Hosted API Availability
 
-Relevant information may not always appear among the retrieved results, especially when a question is broad or requires information spread across several documents.
+The Part 1 prediction API is hosted on a free-tier service and may experience cold starts or temporary delays.
 
-## 15.4 API Availability
+## 16.6 Prediction Scope
 
-The prediction service is hosted on a free-tier platform and may experience cold starts or temporary response delays.
+The existing prediction model provides a one-hour-ahead temperature prediction for Harare, Bulawayo, Mutare and Gweru. It does not currently provide a complete multi-day forecast.
 
-The assistant's prediction functionality consequently depends on the availability of the deployed API.
+## 16.7 Conversation Memory
 
-## 15.5 Prediction Scope
+Conversation history is maintained within the active Streamlit session and is not permanent storage across separate sessions.
 
-The existing prediction model provides a one-hour-ahead temperature forecast for the supported cities.
+## 16.8 Differences Between Local and Deployed Implementations
 
-It does not currently provide a complete multi-day weather forecast.
-
-## 15.6 Conversation Memory
-
-Conversation history is maintained within the active Streamlit session.
-
-It is not designed as permanent conversation storage across separate sessions.
-
-## 15.7 Local Computing Requirements
-
-The application relies on locally executed language and embedding models.
-
-Its performance therefore depends on the available computing resources, particularly memory and processing capacity.
+The local Ollama and deployed Gemini configurations use different language and embedding models. Their indexes and runtime requirements must be kept separate. The deployed version also depends on hosted Gemini and Streamlit services.
 
 ---
 
-# 16. FUTURE IMPROVEMENTS
+# 17. FUTURE IMPROVEMENTS
 
-The following improvements could strengthen the application:
+Potential improvements include:
 
-1. **Expand the knowledge base:** Incorporate additional Zimbabwe-specific climate, weather, agricultural and environmental research documents.
-2. **Improve retrieval quality:** Experiment with alternative chunking strategies, retrieval parameters and ranking methods.
-3. **Strengthen response evaluation:** Develop a broader evaluation dataset to assess factual accuracy, evidence relevance and response consistency.
-4. **Improve source citations:** Provide more consistent document and page references in research responses.
+1. **Expand the knowledge base:** Add more Zimbabwe-specific climate, weather, agricultural and environmental research.
+2. **Improve retrieval quality:** Evaluate alternative chunking strategies, retrieval parameters and ranking methods.
+3. **Strengthen response evaluation:** Develop a broader test dataset to assess factual accuracy, evidence relevance and response consistency.
+4. **Improve source citations:** Provide consistent document and page references in generated research responses.
 5. **Enhance conversation memory:** Explore persistent conversation storage where appropriate.
-6. **Improve user experience:** Refine the Streamlit interface and introduce additional visualisations.
+6. **Improve the user experience:** Refine the Streamlit interface and introduce additional relevant visualisations.
 7. **Expand prediction capabilities:** Explore additional forecast horizons and weather variables.
-8. **Improve service reliability:** Consider more reliable API hosting and monitoring arrangements.
+8. **Improve service reliability:** Consider more reliable API hosting, quota monitoring and service monitoring.
+9. **Document reproducibility:** Maintain clear instructions for reproducing both the local Ollama configuration and the deployed Gemini configuration.
 
 ---
 
-# 17. CONCLUSION
+# 18. CONCLUSION
 
-Part 2 extends the Zimbabwe Weather Intelligence project by integrating Generative AI with the existing machine learning-based temperature prediction service.
+Part 2 extends the Zimbabwe Weather Intelligence project beyond temperature prediction by introducing document-based climate research and Generative AI capabilities. The implementation includes a Zimbabwe-specific knowledge base, document extraction and chunking, embeddings, FAISS retrieval, RAG, LangChain, LangGraph, MCP integration and a Streamlit interface connected to the Part 1 prediction API.
 
-The implementation establishes a Zimbabwe-specific climate knowledge base using document extraction, text chunking, local embeddings and FAISS vector storage. It also introduces Retrieval-Augmented Generation, local language models, AI agent workflows, LangGraph orchestration and MCP-based integration with the existing prediction API.
+The project was initially developed and tested using locally hosted Ollama models, and that working local implementation and its code have been retained. The application was subsequently adapted to use Gemini for deployment on Streamlit Community Cloud. Hosting Ollama in the cloud would have required additional storage for the model files and sufficient server memory and compute resources to run them, increasing infrastructure requirements and potentially hosting costs. Gemini allowed the model workloads to be handled through a hosted API, making the application accessible to a supervisor or reviewer through a browser without requiring Ollama to be installed or hosted by the project. The deployed version remains subject to Gemini API credentials, quotas and any applicable usage charges.
 
-The system provides two complementary capabilities: temperature prediction and contextual weather and climate research.
-
-The knowledge-base construction process was completed successfully, with 103 source records processed into 217 chunks and all five retrieval smoke tests passing. The prediction API and MCP integration were also tested successfully.
-
-Further improvements are required in general research response accuracy, retrieval evaluation, knowledge-base coverage and service reliability.
-
-Overall, Part 2 establishes a functional Generative AI layer that extends the original Zimbabwe Weather Intelligence solution beyond temperature prediction into document-based climate research and conversational interaction.
-
----
+The recorded knowledge-base build generated 217 chunks and passed all five focused retrieval smoke tests. The prediction API and MCP integration were also tested successfully. Further work is appropriate in general research-response evaluation, retrieval quality, knowledge-base coverage and hosted-service reliability.
